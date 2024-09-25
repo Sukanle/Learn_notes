@@ -1,0 +1,12 @@
+# 版本号
+#define VERSION "@VERSION@"
+# 主版本号，当底层代码有重大变动时，主版本号+1
+#define VERSION_MAJOR "@VERSION_MAJOR@"
+# 次版本号，当业务逻辑有较大变动并且不兼容之前版本时，次版本号+1
+#define VERSION_MINOR "@VERSION_MINOR@"
+# 修订版本号，当有较小的改动或者bug修复时，修订版本号+1
+#define VERSION_PATCH "@VERSION_PATCH@"
+# 编译版本号，以时间戳为准
+#define VERSION_BUILD "@VERSION_BUILD@"
+# 发布版本类型：base（框架）、Alpha（内测）、Beta（公测）、RC（候选）、Release（正式）
+#define VERSION_TYPE "@VERSION_TYPE@"
