@@ -68,10 +68,9 @@ TARGET := world
 NUMBER_WIDTH := 3
 
 CURRENT_STEP = 0
-TOTAL_STEPS := $(words $(SRCS)+$(OBJS)+$(TARGET))
+TOTAL_STEPS := $(words $(SRCS) $(OBJS) $(TARGET))
 
 all: $(TARGET)
-	$(call print_aligned_number, 100)
 	$(call print_built_target)
 
 $(TARGET): $(OBJS)
@@ -108,17 +107,17 @@ define print_linked_target
 	$(call print_aligned_number, $(shell expr $(CURRENT_STEP) \* 100 / $(TOTAL_STEPS)))
 	@printf '$(MAKE_COLOR_GREEN)Linking '
 	@printf '$1'
-	@printf ' executable $@...$(MAKE_COLOR_NORMAL)\n'
+	@printf ' executable $(notdir $@)...$(MAKE_COLOR_NORMAL)\n'
 endef
 ## 编译源文件函数
 define print_building_source
 	$(call print_aligned_number, $(shell expr $(CURRENT_STEP) \* 100 / $(TOTAL_STEPS)))
 	@printf '$(MAKE_COLOR_DRAGREEN)Building '
 	@printf '$1'
-	@printf ' object $(notdir $<.o)...$(MAKE_COLOR_NORMAL)\n'
+	@printf ' object $(notdir $(<:.cpp=.o))...$(MAKE_COLOR_NORMAL)\n'
 endef
 ## 构建成功函数
 define print_built_target
-	$(call print_aligned_number, $(shell expr $(CURRENT_STEP) \* 100 / $(TOTAL_STEPS)))
+	$(call print_aligned_number, 100)
 	@printf ' Built target $(TARGET)\n'
 endef

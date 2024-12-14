@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root><node2 attribute="no">content of node2</node2><node3>content changed</node3><node2 attribute="no">NODE CONTENT</node2><son><grandson>This is a grandson node</grandson><newGrandson>newGrandson content</newGrandson></son></root>
