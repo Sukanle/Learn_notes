@@ -1,0 +1,88 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-Wall",
+      "-O2",
+      "-D_DEBUG",
+      "-I/usr/include/libxml2",
+      "-o",
+      "CreateXmlFile",
+      "CreateXmlFile.cpp"
+    ],
+    "directory": "/home/zero/learn/learn_xml",
+    "file": "/home/zero/learn/learn_xml/CreateXmlFile.cpp",
+    "output": "/home/zero/learn/learn_xml/CreateXmlFile"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I./",
+      "-I/usr/include/libxml2",
+      "-o",
+      "CreateXmlFile_cn",
+      "./CreateXmlFile_cn.cpp"
+    ],
+    "directory": "/home/zero/learn/learn_xml",
+    "file": "/home/zero/learn/learn_xml/CreateXmlFile_cn.cpp",
+    "output": "/home/zero/learn/learn_xml/CreateXmlFile_cn"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I./",
+      "-I/usr/include/libxml2",
+      "-o",
+      "CreateXmlFile_cn",
+      "./wxn_codeConv.cpp"
+    ],
+    "directory": "/home/zero/learn/learn_xml",
+    "file": "/home/zero/learn/learn_xml/wxn_codeConv.cpp",
+    "output": "/home/zero/learn/learn_xml/CreateXmlFile_cn"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I./",
+      "-o",
+      "CreateXmlFile_cn",
+      "./CreateXmlFile_cn.cpp"
+    ],
+    "directory": "/home/zero/learn/learn_xml",
+    "file": "/home/zero/learn/learn_xml/CreateXmlFile_cn.cpp",
+    "output": "/home/zero/learn/learn_xml/CreateXmlFile_cn"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I./",
+      "-o",
+      "CreateXmlFile_cn",
+      "./wxn_codeConv.cpp"
+    ],
+    "directory": "/home/zero/learn/learn_xml",
+    "file": "/home/zero/learn/learn_xml/wxn_codeConv.cpp",
+    "output": "/home/zero/learn/learn_xml/CreateXmlFile_cn"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-Wall",
+      "-O2",
+      "-D_DEBUG",
+      "-I/usr/include/libxml2",
+      "-o",
+      "XPathForXmlFile",
+      "XPathForXmlFile.cpp"
+    ],
+    "directory": "/home/zero/learn/learn_xml",
+    "file": "/home/zero/learn/learn_xml/XPathForXmlFile.cpp",
+    "output": "/home/zero/learn/learn_xml/XPathForXmlFile"
+  }
+]

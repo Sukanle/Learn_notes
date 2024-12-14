@@ -4,3 +4,4 @@
 ./learn_cpp/learn_make/demo/*.o
 ./learn_cpp/learn_make/demo/world
 *.un~
+*.cache
