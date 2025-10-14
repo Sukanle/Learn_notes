@@ -1,7 +1,9 @@
 ./learn_vim
-./learn_cpp/bin/*.cpp
-./learn_cpp/test*
-./learn_cpp/learn_make/demo/*.o
-./learn_cpp/learn_make/demo/world
+learn_cpp/bin
+learn_cpp/test*
+learn_cpp/learn_make/demo/*.o
+learn_cpp/learn_make/demo/world
+
 *.un~
 *.cache
+*.so

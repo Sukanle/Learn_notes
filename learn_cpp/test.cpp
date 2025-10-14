@@ -1,59 +1,28 @@
-#include <benchmark/benchmark.h>
-#include <cstddef>
-#include <gtest/gtest.h>
-#include <immintrin.h>
-#include <memory.h>
-#include <random>
+#include <stdio.h>
 
-// BEGIN CODE
-void saxpy(float a, const float* __restrict x, const float* __restrict y,
-    float* __restrict z, size_t n) {
-    for(size_t i =0; i<n;i+=4){
-        __m128 xi= _mm_loadu_ps(&x[i]);
-        __m128 yi= _mm_loadu_ps(&y[i]);
-        __m128 zi= a * xi + yi;
-        _mm_storeu_ps(&z[i], zi);
-    }
-}
-// END CODE
-
-static void bench(benchmark::State &s) {
-    const auto n = size_t(8192);
-    auto a = 0.5f;
-    auto x = std::vector<float>(n);
-    auto y = std::vector<float>(n);
-    auto z = std::vector<float>(n);
-    auto z2 = std::vector<float>(n);
-    std::generate(x.begin(), x.end(), [uni = std::uniform_real_distribution<float>(), rng = std::mt19937()] () mutable { return uni(rng); });
-    std::generate(y.begin(), y.end(), [uni = std::uniform_real_distribution<float>(), rng = std::mt19937()] () mutable { return uni(rng); });
-    for (auto _: s) {
-        saxpy(a, x.data(), y.data(), z.data(), n);
-        benchmark::DoNotOptimize(x);
-        benchmark::DoNotOptimize(y);
-    }
-    s.SetItemsProcessed(n * s.iterations());
-}
-BENCHMARK(bench);
-
-void scalar_saxpy(float a, float const *x, float const *y, float *z, size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        z[i] = a * x[i] + y[i];
+unsigned int CRC;                 // int的大小是32位，作32位CRC寄存器
+unsigned int CRC_32_Table[256];   // 用来保存CRC码表
+void GenerateCRC32_Table() {
+    for (int i = 0; i < 256; ++i)   // 用++i以提高效率
+    {
+        CRC = i;
+        for (int j = 0; j < 8; ++j) {
+            if (CRC & 1)                         // LSM为1
+                CRC = (CRC >> 1) ^ 0xEDB88320;   // 采取反向校验
+            else   // 0xEDB88320就是CRC-32多项表达式的reversed值
+                CRC >>= 1;
+        }
+        CRC_32_Table[i] = CRC;
     }
 }
 
-TEST(MySuite, MyTest) {
-    const auto n = size_t(8193);
-    auto a = 0.5f;
-    auto x = std::vector<float>(n);
-    auto y = std::vector<float>(n);
-    auto z = std::vector<float>(n);
-    auto z2 = std::vector<float>(n);
-    std::generate(x.begin(), x.end(), [uni = std::uniform_real_distribution<float>(), rng = std::mt19937()] () mutable { return uni(rng); });
-    std::generate(y.begin(), y.end(), [uni = std::uniform_real_distribution<float>(), rng = std::mt19937()] () mutable { return uni(rng); });
-    saxpy(a, x.data(), y.data(), z.data(), n);
-    scalar_saxpy(a, x.data(), y.data(), z2.data(), n);
-    for (size_t i = 0; i < n; i++) {
-        EXPECT_EQ(z[i], z2[i]);
-        if (z[i] != z2[i]) break;
-    }
+int main() {
+    FILE* pfile = fopen("crc32.txt", "w+");
+    GenerateCRC32_Table();
+    for (int i = 0; i + 3 < 256 - 4; i += 4)
+        fprintf(pfile, "%#0.8x, %#0.8x, %#0.8x, %#0.8x,\n", CRC_32_Table[i], CRC_32_Table[i + 1],
+                CRC_32_Table[i + 2], CRC_32_Table[i + 3]);
+    fprintf(pfile, "%#0.8x, %#0.8x, %#0.8x, %#0.8x\n", CRC_32_Table[252], CRC_32_Table[253],
+            CRC_32_Table[254], CRC_32_Table[255]);
+    return 0;
 }
