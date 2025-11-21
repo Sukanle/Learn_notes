@@ -10,7 +10,7 @@
 // In Verilog, multi-bits signals are defined by using [msb:lsb] after `input` or `output` keywords
 // `msb` means most significant bit, `lsb` means least significant bit
 // The width of the signal is `msb - lsb + 1`
-module mult_bits_gate (
+module multBitsGate (
     input [2:0] a, // Signal bit width is 3, it is different from C/C++, the index starts from 0, end at 2.
                    // So the signal has 3 bits: a[2], a[1], a[0]. If this is defined in C/C++, it will be a[0], a[1], a[2].
                    // Verilog is designed for hardware description, so the index starts from 0 to n. Not like C/C++, it starts from 0 to n-1.

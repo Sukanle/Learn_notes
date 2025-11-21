@@ -5,7 +5,7 @@
 // `module` such as `class` in C++, it comprises of data members and member functions
 // `members` -> `inputs`, `outputs`, `wires`, `registers`,  `inouts`(`input` + `output`ss)
 // `functions` -> `always`, `assign` statements
-module example1 ( 
+module simpleCombGate ( 
     // `input` and `output` are keywords, that means we are defining inputs and outputs
     // In this particular module, we have 3 inputs and 1 output
     input a,
