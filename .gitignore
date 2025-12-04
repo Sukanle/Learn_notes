@@ -1,5 +1,5 @@
 learn_vim
-learn_cpp/bin
+bin
 learn_cpp/test*
 learn_cpp/learn_make/demo/*.o
 learn_cpp/learn_make/demo/world
