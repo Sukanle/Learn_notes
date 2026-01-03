@@ -1,0 +1,16 @@
+[
+{
+  "directory": "/Users/sukanle/Documents/learn_note.localized/learn_gl",
+  "arguments": ["/opt/homebrew/Cellar/llvm/21.1.6/bin/clang++", "-c", "-Qunused-arguments", "--target=arm64-apple-macos15.7", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk", "-O3", "-std=c++20", "-Iinclude", "-DNDEBUG", "-framework", "OpenGL", "-I", "/opt/homebrew/Cellar/glfw/3.4/include", "-flto", "-s", "-o", "build/.objs/gravity_sim/macosx/arm64/release/demo/gravity_sim.cpp.o", "demo/gravity_sim.cpp"],
+  "file": "demo/gravity_sim.cpp"
+},
+{
+  "directory": "/Users/sukanle/Documents/learn_note.localized/learn_gl",
+  "arguments": ["/opt/homebrew/Cellar/llvm/21.1.6/bin/clang++", "-c", "-Qunused-arguments", "--target=arm64-apple-macos15.7", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk", "-O3", "-std=c++20", "-Iinclude", "-DNDEBUG", "-framework", "OpenGL", "-I", "/opt/homebrew/Cellar/glfw/3.4/include", "-flto", "-s", "-o", "build/.objs/shader-class/macosx/arm64/release/demo/shader-class.cpp.o", "demo/shader-class.cpp"],
+  "file": "demo/shader-class.cpp"
+},
+{
+  "directory": "/Users/sukanle/Documents/learn_note.localized/learn_gl",
+  "arguments": ["/opt/homebrew/Cellar/llvm/21.1.6/bin/clang++", "-c", "-Qunused-arguments", "--target=arm64-apple-macos15.7", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk", "-O3", "-std=c++20", "-Iinclude", "-DNDEBUG", "-framework", "OpenGL", "-I", "/opt/homebrew/Cellar/glfw/3.4/include", "-flto", "-s", "-o", "build/.objs/version/macosx/arm64/release/demo/version.cpp.o", "demo/version.cpp"],
+  "file": "demo/version.cpp"
+}]

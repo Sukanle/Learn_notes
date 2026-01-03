@@ -1,8 +1,17 @@
-learn_vim
-bin
+# global
+**/bin/
+**/tmp/
+**/txt/
+**/obj/
+**/build/
+**/.xmake
+
+# cpp
 learn_cpp/test*
 learn_cpp/learn_make/demo/*.o
 learn_cpp/learn_make/demo/world
+
+# verilog
 learn_verilog/dot
 
 *.un~
