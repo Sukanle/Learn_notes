@@ -1,21 +1,18 @@
-// xmake-type: Target
-// xmake-deps: type = dynamic, path = {"default"}, lib = {{"shader"}} xmake-deps-end
+// Deps: {{type = "share", name = "skl-gl", cache = true, priority = 1, deps = null}}
 #include "skl/shader.hpp"
+
 #include <filesystem>
-#include "skl/fs.hpp"
 #include <string>
 
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
 
-void frameBufferSize([[maybe_unused]] GLFWwindow* window, GLsizei width,
-                     GLsizei height) {
+void frameBufferSize([[maybe_unused]] GLFWwindow* window, GLsizei width, GLsizei height) {
     glViewport(0, 0, width, height);
 }
 
 void processInput(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 #define ERR(cond, ...)                      \
@@ -36,18 +33,14 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window =
-        glfwCreateWindow(WIDTH, HEIGHT, "shader-class", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "shader-class", nullptr, nullptr);
     ERR(!window, "Error: Faild to Create GLFW window.\n");
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, frameBufferSize);
 
-    ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress),
-        "Error: Faild to initization GLAD.\n");
+    ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error: Faild to initization GLAD.\n");
 
     std::string pwd(std::filesystem::current_path());
-    // std::string exe{};
-    // skl::fs::exedir(exe.data(), )
     std::string vert = pwd + "/shader/test.vert";
     std::string frag = pwd + "/shader/test.frag";
 
@@ -69,13 +62,10 @@ int main() {
 
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
-                     GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6,
-                              ((void*)0));
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, ((void*)0));
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6,
-                              ((void*)(sizeof(GLfloat) * 3)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, ((void*)(sizeof(GLfloat) * 3)));
         glEnableVertexAttribArray(1);
 
         shader.use();

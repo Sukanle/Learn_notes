@@ -1,7 +1,4 @@
 // xmake-type: Target
-#ifdef __APPLE__
-#define GL_SILENCE_DEPRECATION
-#endif
 
 // C ISO
 #include <math.h>

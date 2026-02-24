@@ -54,22 +54,22 @@ GLboolean Shader::checkCompile(unsigned int shader, GLenum type) {
     int success = 0;
     char infoLog[1024] = {};
     if (type == GL_FALSE) {
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
         if (!success) {
-            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
             __GL_UNUSED_RET(fprintf(stderr,
-                                    "ERROR::SHADER_COMPILATION_ERROR of type: %s\n"
+                                    "ERROR::PROGRAM_LINKING_ERROR of type: %s\n"
                                     "%s\n"
                                     " -- --------------------------------------------------- -- \n",
                                     getTypeName(type), infoLog));
             return GL_FALSE;
         }
     } else {
-        glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success) {
-            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
             __GL_UNUSED_RET(fprintf(stderr,
-                                    "ERROR::PROGRAM_LINKING_ERROR of type: %s\n"
+                                    "ERROR::SHADER_COMPILATION_ERROR of type: %s\n"
                                     "%s\n"
                                     " -- --------------------------------------------------- -- \n",
                                     getTypeName(type), infoLog));
