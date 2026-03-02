@@ -88,11 +88,11 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(3));
     glEnableVertexAttribArray(1);
 
-    std::string pwd(std::filesystem::current_path());
+    std::string cpath(std::filesystem::current_path().string());
 
     std::array<gl::texture_t, 2> text_arr{};
-    text_arr[0].path = pwd + "/resources/textures/container.jpg";
-    text_arr[1].path = pwd + "/resources/textures/awesomeface.png";
+    text_arr[0].path = cpath + "/resources/textures/container.jpg";
+    text_arr[1].path = cpath + "/resources/textures/awesomeface.png";
     stbi_set_flip_vertically_on_load(GL_TRUE);
 
     for (auto& texture : text_arr) {
@@ -113,8 +113,8 @@ int main() {
             (void)fprintf(stderr, "Failed to lead texture (id: %d, path: %s).\n", texture.ID, texture.path.c_str());
     }
     {
-        std::string vert(pwd + "/shader/transform.vert");
-        std::string frag(pwd + "/shader/transform.frag");
+        std::string vert(cpath + "/shader/transform.vert");
+        std::string frag(cpath + "/shader/transform.frag");
         gl::Shader shader(vert.c_str(), frag.c_str());
 
         shader.use();

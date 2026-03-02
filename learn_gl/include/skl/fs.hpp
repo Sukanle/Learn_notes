@@ -1,5 +1,3 @@
-// xmake-type: Null
-// xmake-deps: path = {"src"}, file = {{"fs.cpp"}} xmake-deps-end
 #pragma once
 
 #include <stdio.h>
@@ -7,10 +5,7 @@
 #include <string.h>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
-
+#include <libloaderapi.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,16 +19,13 @@ WINBASEAPI DWORD WINAPI GetModuleFileNameA(HMODULE hModule, LPCH lpFilename, DWO
 #include <unistd.h>
 #endif
 
-#define PATH_MAX 1024
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
 namespace skl::fs {
-#endif
+constexpr size_t SKL_PATH_MAX = 1024ULL;
 /**
  * 获取可执行文件路径
  * @param buffer 输出缓冲区，用于存储路径
@@ -41,17 +33,13 @@ namespace skl::fs {
  * @param filename 要附加的文件名，NULL表示获取当前程序路径
  * @return 成功时返回buffer，失败时返回NULL
  */
-char* exepath(char* buffer, size_t buffer_size, const char* filename);
+char* exepath(char* buffer, size_t buffer_size, const char* filename)noexcept;
 
 /**
  * 获取指定文件在可执行文件目录中的完整路径
  * @param buffer 输出缓冲区
  * @param buffer_size 缓冲区大小
- * @param filename 要附加的文件名，NULL表示获取当前程序路径
  * @return 成功时返回buffer，失败时返回NULL
  */
-char* exedir(char* buffer, size_t buffer_size, const char* filename);
-#ifdef __cplusplus
+char* exedir(char* buffer, size_t buffer_size)noexcept;
 }   // namespace skl::fs
-}
-#endif

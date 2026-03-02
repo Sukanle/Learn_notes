@@ -1,4 +1,3 @@
-// xmake-type: Target
 #include <stdio.h>
 #include <stdint.h>
 

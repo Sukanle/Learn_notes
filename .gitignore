@@ -5,6 +5,12 @@
 **/obj/
 **/build/
 **/.xmake
+**/.un~
+**/.cache
+**/.so
+**/.dot
+**/.vscode
+**/.luarc.json
 
 # cpp
 learn_cpp/test*
@@ -13,7 +19,3 @@ learn_cpp/learn_make/demo/world
 
 # verilog
 learn_verilog/dot
-
-*.un~
-*.cache
-*.so

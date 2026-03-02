@@ -10,6 +10,7 @@
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include <array>
 #include <filesystem>
 
 namespace gl = skl::opengl;
@@ -46,13 +47,54 @@ int main() {
 
     ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error: Faild to initization GLAD.\n");
 
+    glEnable(GL_DEPTH_TEST);
+
+    // clang-format off
     GLfloat vectices[] = {
         // positions          // texture coords
-        0.5F,  0.5F,  0.0F, 1.0F, 1.0F,   // top right
-        0.5F,  -0.5F, 0.0F, 1.0F, 0.0F,   // bottom right
-        -0.5F, -0.5F, 0.0F, 0.0F, 0.0F,   // bottom left
-        -0.5F, 0.5F,  0.0F, 0.0F, 1.0F    // top left
+        -0.5F, -0.5F, -0.5F,  0.0F, 0.0F, 
+        0.5F, -0.5F, -0.5F,  1.0F, 0.0F,
+        0.5F,  0.5F, -0.5F,  1.0F, 1.0F,
+        0.5F,  0.5F, -0.5F,  1.0F, 1.0F,
+        -0.5F,  0.5F, -0.5F,  0.0F, 1.0F,
+        -0.5F, -0.5F, -0.5F,  0.0F, 0.0F,
+
+        -0.5F, -0.5F,  0.5F,  0.0F, 0.0F,
+        0.5F, -0.5F,  0.5F,  1.0F, 0.0F,
+        0.5F,  0.5F,  0.5F,  1.0F, 1.0F,
+        0.5F,  0.5F,  0.5F,  1.0F, 1.0F,
+        -0.5F,  0.5F,  0.5F,  0.0F, 1.0F,
+        -0.5F, -0.5F,  0.5F,  0.0F, 0.0F,
+
+        -0.5F,  0.5F,  0.5F,  1.0F, 0.0F,
+        -0.5F,  0.5F, -0.5F,  1.0F, 1.0F,
+        -0.5F, -0.5F, -0.5F,  0.0F, 1.0F,
+        -0.5F, -0.5F, -0.5F,  0.0F, 1.0F,
+        -0.5F, -0.5F,  0.5F,  0.0F, 0.0F,
+        -0.5F,  0.5F,  0.5F,  1.0F, 0.0F,
+
+        0.5F,  0.5F,  0.5F,  1.0F, 0.0F,
+        0.5F,  0.5F, -0.5F,  1.0F, 1.0F,
+        0.5F, -0.5F, -0.5F,  0.0F, 1.0F,
+        0.5F, -0.5F, -0.5F,  0.0F, 1.0F,
+        0.5F, -0.5F,  0.5F,  0.0F, 0.0F,
+        0.5F,  0.5F,  0.5F,  1.0F, 0.0F,
+
+        -0.5F, -0.5F, -0.5F,  0.0F, 1.0F,
+        0.5F, -0.5F, -0.5F,  1.0F, 1.0F,
+        0.5F, -0.5F,  0.5F,  1.0F, 0.0F,
+        0.5F, -0.5F,  0.5F,  1.0F, 0.0F,
+        -0.5F, -0.5F,  0.5F,  0.0F, 0.0F,
+        -0.5F, -0.5F, -0.5F,  0.0F, 1.0F,
+
+        -0.5F,  0.5F, -0.5F,  0.0F, 1.0F,
+        0.5F,  0.5F, -0.5F,  1.0F, 1.0F,
+        0.5F,  0.5F,  0.5F,  1.0F, 0.0F,
+        0.5F,  0.5F,  0.5F,  1.0F, 0.0F,
+        -0.5F,  0.5F,  0.5F,  0.0F, 0.0F,
+        -0.5F,  0.5F, -0.5F,  0.0F, 1.0F
     };
+    // clang-format on
     GLuint indices[] = {
         0, 1, 3,   // first triangle
         1, 2, 3    // second triangle
@@ -78,7 +120,7 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(3));
     glEnableVertexAttribArray(1);
 
-    std::string cpath(std::filesystem::current_path());
+    std::string cpath(std::filesystem::current_path().string());
     std::array<gl::texture_t, 2> text_arr;
     text_arr[0].path = cpath + "/resources/textures/container.jpg";
     text_arr[1].path = cpath + "/resources/textures/awesomeface.png";
@@ -109,11 +151,26 @@ int main() {
         shader.set1I("texture0", 0);
         shader.set1I("texture1", 1);
 
+        // clang-format off
+        std::array cubePositions = {
+            glm::vec3( 0.0F,  0.0F,  0.0F),
+            glm::vec3( 2.0F,  5.0F, -15.0F),
+            glm::vec3(-1.5F, -2.2F, -2.5F),
+            glm::vec3(-3.8F, -2.0F, -12.3F),
+            glm::vec3( 2.4F, -0.4F, -3.5F),
+            glm::vec3(-1.7F,  3.0F, -7.5F),
+            glm::vec3( 1.3F, -2.0F, -2.5F),
+            glm::vec3( 1.5F,  2.0F, -2.5F),
+            glm::vec3( 1.5F,  0.2F, -1.5F),
+            glm::vec3(-1.3F,  1.0F, -1.5F)
+        };
+        // clang-format on
+
         while (!glfwWindowShouldClose(ctx)) {
             processInput(ctx);
 
             glClearColor(0.2F, 0.3F, 0.3F, 1.0F);
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             for (uint32_t i = 0; i < text_arr.size(); ++i) {
                 glActiveTexture(GL_TEXTURE0 + i);
@@ -122,19 +179,28 @@ int main() {
 
             shader.use();
 
-            glm::mat4 model(1.0F);
+            // glm::mat4 model(1.0F);
             glm::mat4 view(1.0F);
             glm::mat4 project(1.0F);
-            model = glm::rotate(model, glm::radians(-55.0F), glm::vec3(1.0F, 0.0F, 0.0F));
+            // model = glm::rotate(model, glm::radians(-55.0F), glm::vec3(1.0F, 0.0F, 0.0F));
+            // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0F), glm::vec3(0.5F, 1.0F, 0.0F));
             view = glm::translate(view, glm::vec3(0.0F, 0.0F, -3.0F));
             project = glm::perspective(glm::radians(45.0F), (float)WIDTH / (float)HEIGHT, 0.1F, 100.0F);
 
-            shader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
+            // shader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
             shader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
             shader.setMat4F("project", 1, GL_FALSE, glm::value_ptr(project));
 
             glBindVertexArray(VAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+            for (uint32_t i = 0; i < cubePositions.size(); ++i) {
+                glm::mat4 model(1.0F);
+                model = glm::translate(model, cubePositions[i]);
+                float angle = 20.0F * i;
+                model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0F, 0.3F, 0.5F));
+                shader.setMat4F("model", 1, GL_FALSE,glm::value_ptr(model));
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+            // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
             glfwSwapBuffers(ctx);
             glfwPollEvents();

@@ -1,4 +1,3 @@
-// xmake-type: Target
 // C ISO
 #include <stdio.h>
 

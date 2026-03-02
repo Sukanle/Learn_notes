@@ -1,10 +1,7 @@
 #include "skl/fs.hpp"
 
-#ifdef __cplusplus
-extern "C" {
 namespace skl::fs {
-#endif
-char* exepath(char* buffer, size_t buffer_size, const char* filename) {
+char* exepath(char* buffer, size_t buffer_size, const char* filename) noexcept{
     if (!buffer || buffer_size == 0) { return NULL; }
 
     char exe_path[PATH_MAX];
@@ -79,12 +76,12 @@ char* exepath(char* buffer, size_t buffer_size, const char* filename) {
         // 构建目录+文件名路径
         size_t dir_len = strlen(exe_dir);
         size_t file_len = strlen(filename);
-
         if (dir_len + 1 + file_len + 1 > buffer_size) {
             return NULL;   // 缓冲区不足
         }
 
         strcpy(buffer, exe_dir);
+        if (file_len == 0) return buffer;   // 只需要目录路径
 
 // 添加路径分隔符
 #ifdef _WIN32
@@ -99,10 +96,7 @@ char* exepath(char* buffer, size_t buffer_size, const char* filename) {
     return buffer;
 }
 
-char* exedir(char* buffer, size_t buffer_size, const char* filename) {
-    return exepath(buffer, buffer_size, filename);
+char* exedir(char* buffer, size_t buffer_size) noexcept{
+    return exepath(buffer, buffer_size, "");
 }
-#ifdef __cplusplus
 }   // namespace skl::fs
-}
-#endif

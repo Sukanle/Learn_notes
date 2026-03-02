@@ -40,9 +40,9 @@ int main() {
 
     ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error: Faild to initization GLAD.\n");
 
-    std::string pwd(std::filesystem::current_path());
-    std::string vert = pwd + "/shader/test.vert";
-    std::string frag = pwd + "/shader/test.frag";
+    std::string cpath(std::filesystem::current_path().string());
+    std::string vert = cpath + "/shader/test.vert";
+    std::string frag = cpath + "/shader/test.frag";
 
     {
         gl::Shader shader(vert.data(), frag.data());

@@ -1,7 +1,9 @@
-// xmake-type: Target
-
 // C ISO
+#ifdef __WIN32
+#define _USE_MATH_DEFINES
+#endif
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 
 // OpenGL

@@ -4,6 +4,7 @@
 #include "skl/texture.hpp"
 
 #include <filesystem>
+#include <array>
 
 // #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -94,11 +95,11 @@ int main() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, skl::BufferOffset<GLfloat>(6));
     glEnableVertexAttribArray(2);
 
-    std::string pwd(std::filesystem::current_path());
+    std::string cpath(std::filesystem::current_path().string());
 
     std::array<gl::texture_t, 2> texture_arr;
-    texture_arr[0].path = pwd + "/resources/textures/container.jpg";
-    texture_arr[1].path = pwd + "/resources/textures/awesomeface.png";
+    texture_arr[0].path = cpath + "/resources/textures/container.jpg";
+    texture_arr[1].path = cpath + "/resources/textures/awesomeface.png";
     stbi_set_flip_vertically_on_load(GL_TRUE);
 
     for (auto& texture : texture_arr) {
@@ -122,8 +123,8 @@ int main() {
     }
 
     {
-        std::string vert = pwd + "/shader/texture.vert";
-        std::string frag = pwd + "/shader/texture.frag";
+        std::string vert = cpath + "/shader/texture.vert";
+        std::string frag = cpath + "/shader/texture.frag";
         gl::Shader shader(vert.c_str(), frag.c_str());
         shader.use();
         glUniform1i(glGetUniformLocation(shader.getID(), "texture1"), 0);
