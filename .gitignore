@@ -1,9 +1,9 @@
 # global
-**/bin/
-**/tmp/
-**/txt/
-**/obj/
-**/build/
+**/bin
+**/tmp
+**/txt
+**/obj
+**/build
 **/.xmake
 **/.un~
 **/.cache
@@ -16,6 +16,7 @@
 learn_cpp/test*
 learn_cpp/learn_make/demo/*.o
 learn_cpp/learn_make/demo/world
+compile_commands.json
 
 # verilog
 learn_verilog/dot

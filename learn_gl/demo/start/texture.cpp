@@ -123,8 +123,8 @@ int main() {
     }
 
     {
-        std::string vert = cpath + "/shader/texture.vert";
-        std::string frag = cpath + "/shader/texture.frag";
+        std::string vert = cpath + "/shader/start/texture.vert";
+        std::string frag = cpath + "/shader/start/texture.frag";
         gl::Shader shader(vert.c_str(), frag.c_str());
         shader.use();
         glUniform1i(glGetUniformLocation(shader.getID(), "texture1"), 0);

@@ -1,70 +1,29 @@
-// Deps: {{type = "share", name = "skl-gl", priority = 1, cache = true, deps = null}, {type = "share", name = "skl-fs", priority = 2, cache = true, deps = null}}
-
-/**
- * @brief Vertex & Index Naming Convention for Cube Geometry
- *
- * This project uses a structured naming scheme for VBO (Vertex Buffer Object)
- * and EBO (Element Buffer Object) identifiers to ensure spatial clarity.
- *
- * FORMAT: [Primitive]-[Face]-[Orientation]
- *
- * 1. PRIMITIVE TYPE:
- *    - P : Point (Single Vertex coordinate)
- *    - R : Rectangle (Quad composed of 2 triangles / 4 vertices)
- *
- * 2. CUBE FACE (Global Space):
- *    - U : Up    (Top)
- *    - D : Down  (Bottom)
- *    - F : Front (Facing Camera)
- *    - B : Back  (Opposite to Front)
- *    - L : Left
- *    - R : Right
- *
- * 3. LOCAL ORIENTATION (Face Space):
- *    - NW: North-West (Top-Left)
- *    - NE: North-East (Top-Right)
- *    - SW: South-West (Bottom-Left)
- *    - SE: South-East (Bottom-Right)
- *    - N : North (Top-Center)
- *    - S : South (Bottom-Center)
- *    - W : West  (Left-Center)
- *    - E : East  (Right-Center)
- *    - C : Center
- *
- * NOTE: 'North' direction on any face always points towards the global Up (U) face.
- *
- * EXAMPLES:
- *    - P-F-NW  : Vertex at the Top-Left corner of the Front face.
- *    - R-U-SE  : Rectangle region at the Bottom-Right of the Up face.
- *    - P-D-C   : Vertex at the exact center of the Down face.
- */
+// Deps: {{type = "share", name = "skl-gl", priortiy = 1, cache = true, deps = null}}
 
 #include "skl/shader.hpp"
 #include "skl/texture.hpp"
 #include "skl/utils.hpp"
-#include "skl/fs.hpp"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
+
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <array>
 #include <filesystem>
 
+constexpr size_t WIDTH = 800ULL;
+constexpr size_t HEIGHT = 600ULL;
 
-void processInput(GLFWwindow* ctx) {
-    if (glfwGetKey(ctx, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(ctx, GL_TRUE);
-}
+float deltaTime = 0.0F;
+float lastFrame = 0.0F;
 
-void frameBufferSizeCallback([[maybe_unused]] GLFWwindow* ctx, GLsizei width, GLsizei height) {
-    glViewport(0, 0, width, height);
-}
+glm::vec3 cameraPos(0.0F, 0.0F, 3.0F);
+glm::vec3 cameraFront(0.0F, 0.0F, -1.0F);
+glm::vec3 cameraUp(0.0F, 1.0F, 0.0F);
 
-constexpr uint32_t WIDTH = 800;
-constexpr uint32_t HEIGHT = 600;
-
-namespace gl = skl::opengl;
 #define ERR(conf, ...)                      \
     if (conf) {                             \
         (void)fprintf(stderr, __VA_ARGS__); \
@@ -72,19 +31,24 @@ namespace gl = skl::opengl;
         return EXIT_FAILURE;                \
     }
 
+void processInput(GLFWwindow *ctx) noexcept;
+void setFrameBufferSize(GLFWwindow *ctx, GLsizei width, GLsizei height) noexcept;
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-#endif
-    GLFWwindow* ctx = glfwCreateWindow(WIDTH, HEIGHT, "camera", nullptr, nullptr);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif   // __APPLE__
+
+    GLFWwindow *ctx = glfwCreateWindow(WIDTH, HEIGHT, "camera_keyboard_dt", nullptr, nullptr);
     ERR(!ctx, "Error: Failed to create GLFW window.\n");
     glfwMakeContextCurrent(ctx);
-    glfwSetFramebufferSizeCallback(ctx, frameBufferSizeCallback);
-    ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error Failed to ininization GLAD.\n");
+    glfwSetFramebufferSizeCallback(ctx, setFrameBufferSize);
+
+    ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error: Failed to initialize GLAD.\n");
 
     // clang-format off
     std::array vertices {
@@ -101,20 +65,20 @@ int main() {
     };
     std::array indices = {
         // Front and back
-        std::array{0, 1, 3}, // R-F-SW
-        std::array{1, 2, 3}, // R-F-NE
-        std::array{5, 4, 7}, // R-B-SE
-        std::array{6, 5, 7}, // R-B-NE
+        std::array{0U, 1U, 3U}, // R-F-SW
+        std::array{1U, 2U, 3U}, // R-F-NE
+        std::array{5U, 4U, 7U}, // R-B-SE
+        std::array{6U, 5U, 7U}, // R-B-NE
         // Up and Down
-        std::array{3, 2, 7}, // R-U-SW
-        std::array{2, 6, 7}, // R-U-NE
-        std::array{0, 5, 1}, // R-D-SW
-        std::array{0, 4, 5}, // R-D-NE
+        std::array{3U, 2U, 7U}, // R-U-SW
+        std::array{2U, 6U, 7U}, // R-U-NE
+        std::array{0U, 5U, 1U}, // R-D-SW
+        std::array{0U, 4U, 5U}, // R-D-NE
         // Left and right
-        std::array{4, 0, 7}, // R-L-SW
-        std::array{0, 3, 7}, // R-L-NE
-        std::array{1, 5, 2}, // R-R-SW
-        std::array{5, 6, 2}, // R-R-NE
+        std::array{4U, 0U, 7U}, // R-L-SW
+        std::array{0U, 3U, 7U}, // R-L-NE
+        std::array{1U, 5U, 2U}, // R-R-SW
+        std::array{5U, 6U, 2U}, // R-R-NE
     };
     // clang-format on
 
@@ -137,15 +101,13 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(3));
     glEnableVertexAttribArray(1);
 
-    char exepath[skl::fs::SKL_PATH_MAX]= {0};
-    skl::fs::exedir(exepath, skl::fs::SKL_PATH_MAX);
-    std::array<gl::texture_t, 2> arr_texture;
-    std::string cpath(exepath);
-    arr_texture[0].path = cpath + "/../../../../resources/textures/container.jpg";
-    arr_texture[1].path = cpath + "/../../../../resources/textures/awesomeface.png";
-    stbi_set_flip_vertically_on_load(GL_TRUE);
+    namespace gl = skl::opengl;
+    std::array<gl::texture_t, 2> textures;
+    std::string cpath(std::filesystem::current_path().string());
+    textures[0].path = cpath + "/resources/textures/container.jpg";
+    textures[1].path = cpath + "/resources/textures/awesomeface.png";
 
-    for (auto& texture : arr_texture) {
+    for (auto &texture : textures) {
         glGenTextures(1, &texture.ID);
         glBindTexture(GL_TEXTURE_2D, texture.ID);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -160,20 +122,18 @@ int main() {
                          texture.data);
             glGenerateMipmap(GL_TEXTURE_2D);
             stbi_image_free(texture.data);
-            texture.data = nullptr;
         } else
             (void)fprintf(stderr, "Failed to load texture[id = %d](path = %s).\n", texture.ID, texture.path.c_str());
     }
 
     {
-        std::string vert = cpath + "/../../../../shader/camera_circle.vert";
-        std::string frag = cpath + "/../../../../shader/camera_circle.frag";
+        std::string vert = cpath + "/shader/start/3D.vert";
+        std::string frag = cpath + "/shader/start/3D.frag";
         gl::Shader shader(vert.c_str(), frag.c_str());
         shader.use();
         shader.set1I("texture0", 0);
         shader.set1I("texture1", 1);
-        glm::mat4 project = glm::perspective(glm::radians(45.0F), (float)WIDTH / (float)HEIGHT, 0.1F, 100.0F);
-        shader.setMat4F("project", 1, GL_FALSE, glm::value_ptr(project));
+
         // clang-format off
         std::array cubePositions = {
             glm::vec3( 0.0F,  0.0F,  0.0F),
@@ -188,38 +148,34 @@ int main() {
             glm::vec3(-1.3F,  1.0F, -1.5F),
         };
         // clang-format on
+        glm::mat4 proj = glm::perspective(glm::radians(45.0F), (float)WIDTH / (float)HEIGHT, 0.1F, 100.0F);
+        shader.setMat4F("project", 1, GL_FALSE, glm::value_ptr(proj));
 
         glEnable(GL_DEPTH_TEST);
-
         while (!glfwWindowShouldClose(ctx)) {
+            float currentFrame = (float)glfwGetTime();
+            deltaTime = currentFrame - lastFrame;
+            lastFrame = currentFrame;
             processInput(ctx);
 
             glClearColor(0.2F, 0.3F, 0.3F, 1.0F);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-            for (size_t i = 0; i < arr_texture.size(); ++i) {
+            for (size_t i = 0; i < textures.size(); ++i) {
                 glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, arr_texture[i].ID);
+                glBindTexture(GL_TEXTURE_2D, textures[i].ID);
             }
 
             shader.use();
 
-            glm::mat4 view(1.0F);
-            float radius = 10.0F;
-            float camX = sinf((float)glfwGetTime()) * radius;
-            float camZ = cosf(glfwGetTime()) * radius;
-            view = glm::lookAt(glm::vec3(camX, 0.0F, camZ), glm::vec3(0.0F, 0.0F, 0.0F), glm::vec3(0.0F, 1.0F, 0.0F));
+            glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
             shader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
 
             glBindVertexArray(VAO);
-
-            for (uint32_t i = 0; i < 10; ++i) {
-                glm::mat4 model(1.0F);
-                model = glm::translate(model, cubePositions[i]);
-                float angle = 20.0F * i;
-                model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0F, 0.3F, 0.5F));
+            for (size_t i = 0; i < cubePositions.size(); ++i) {
+                glm::mat4 model = glm::translate(glm::mat4(1.0F), cubePositions[i]);
+                model = glm::rotate(model, glm::radians(20.0F * i), glm::vec3(1.0F, 0.3F, 0.5F));
                 shader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
-
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
             }
 
@@ -231,8 +187,25 @@ int main() {
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 
-    for (auto& tex : arr_texture)
+    for (auto &tex : textures)
         if (tex.ID) glDeleteTextures(1, &tex.ID);
 
-    return EXIT_SUCCESS;
+    glfwTerminate();
+    return 0;
+}
+
+void processInput(GLFWwindow *ctx) noexcept {
+    if (glfwGetKey(ctx, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(ctx, GL_TRUE);
+
+    float cameraSpeed = 2.5F * deltaTime;
+    if (glfwGetKey(ctx, GLFW_KEY_W) == GLFW_PRESS) cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(ctx, GLFW_KEY_S) == GLFW_PRESS) cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(ctx, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(ctx, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+void setFrameBufferSize([[maybe_unused]] GLFWwindow *ctx, GLsizei width, GLsizei height) noexcept {
+    glViewport(0, 0, width, height);
 }

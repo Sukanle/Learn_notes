@@ -21,11 +21,13 @@ local libs = {
 		path = {
 			os.scriptdir() .. "/src/shader.cpp",
 			os.scriptdir() .. "/src/glad.c",
+			os.scriptdir() .. "/src/camera.cpp",
 		},
 		name = "skl-gl",
 		type = "share",
 		package = {
 			"glfw3",
+			"glm",
 		},
 	},
 }
@@ -81,26 +83,26 @@ local function to_table(str, tab, fn, null)
 	return res
 end
 
-add_packages("glfw3")
-add_packages("opengl")
-local cache_deps = os.scriptdir() .. "/.xmake/deps.json"
+add_packages("glfw3", "opengl")
+local cache_deps = { path = os.scriptdir() .. "/.xmake/deps.json" }
+cache_deps.mtime = os.mtime(cache_deps.path)
 
 local function auto_deps(srcpath, tab, callback)
 	on_load(function(target)
 		import("core.base.json")
-        local fjson = {}
-        local is_cache_exists = os.exists(cache_deps)
-        if is_cache_exists then
-            fjson = json.loadfile(cache_deps)
-        end
-		local t = { target = target:name(), config = {}}
-        if os.mtime(srcpath) > os.mtime(cache_deps) or not fjson[t.target] then
-            local data = table.to_array(io.lines(srcpath, { continuation = "\\" }))
-            data = data[1]
+		local fjson = {}
+		local is_cache_exists = os.exists(cache_deps.path)
+		if is_cache_exists then
+			fjson = json.loadfile(cache_deps.path)
+		end
+		local t = { target = target:name(), config = {} }
+		if os.mtime(srcpath) > cache_deps.mtime or not fjson[t.target] then
+			local data = table.to_array(io.lines(srcpath, { continuation = "\\" }))
+			data = data[1]
 			if string.find(data, "Deps:") == nil then
 				return
 			end
-            print("Create deps cache by json... %s", path.basename(srcpath))
+			print("Create deps cache by json... %s", path.basename(srcpath))
 			data = string.gsub(data, "Deps: ", "")
 			data = string.gsub(data, "// ", "")
 
@@ -108,12 +110,12 @@ local function auto_deps(srcpath, tab, callback)
 			table.sort(t.config, function(a, b)
 				return a.priority < b.priority
 			end)
-            fjson[t.target] = t.config
-        else
-            print("Load deps cache by json... %s", path.basename(srcpath))
-            t.config = fjson[t.target]
+			fjson[t.target] = t.config
+		else
+			print("Load deps cache by json... %s", path.basename(srcpath))
+			t.config = fjson[t.target]
 		end
-        json.savefile(cache_deps, fjson)
+		json.savefile(cache_deps.path, fjson)
 
 		for i = 1, #t.config do
 			target:add("deps", t.config[i].name)
@@ -122,13 +124,14 @@ local function auto_deps(srcpath, tab, callback)
 	end)
 end
 
-for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/*.cpp")) do
-    local basename = path.basename(filepath)
+for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/**/*.cpp")) do
+	local basename = path.basename(filepath)
 	target(basename)
 	set_kind("binary")
 	add_files(filepath)
-    add_cxflags("-Wno-parentheses-equality")
-	check_cincludes("STB_IMAGE_IMPLEMENTATION", "stb_image.h", { includedirs = os.scriptdir() .. "/include"})
+	add_cxflags("-Wno-parentheses-equality")
+	add_packages("glm")
+	check_cincludes("STB_IMAGE_IMPLEMENTATION", "stb_image.h", { includedirs = os.scriptdir() .. "/include" })
 	auto_deps(filepath, { "type", "name", "cache", "priority", "deps" }, function(tab, pos)
 		local is_cache = tab[3][pos]
 		if is_cache == false then
@@ -143,7 +146,7 @@ for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/*.cpp")) do
 	end)
 end
 
-for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/*.c")) do
+for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/**/*.c")) do
 	target(path.basename(filepath))
 	set_kind("binary")
 	add_files(filepath, os.scriptdir() .. "/src/glad.c")

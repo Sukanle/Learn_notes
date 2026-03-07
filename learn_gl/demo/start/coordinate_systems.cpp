@@ -144,8 +144,8 @@ int main() {
             (void)fprintf(stderr, "Failed to lead texture (id: %d, path: %s).\n", texture.ID, texture.path.c_str());
     }
     {
-        std::string vert = cpath + "/shader/coordinate_systems.vert";
-        std::string frag = cpath + "/shader/coordinate_systems.frag";
+        std::string vert = cpath + "/shader/start/3D.vert";
+        std::string frag = cpath + "/shader/start/3D.frag";
         gl::Shader shader(vert.c_str(), frag.c_str());
         shader.use();
         shader.set1I("texture0", 0);

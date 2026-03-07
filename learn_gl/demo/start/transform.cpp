@@ -113,8 +113,8 @@ int main() {
             (void)fprintf(stderr, "Failed to lead texture (id: %d, path: %s).\n", texture.ID, texture.path.c_str());
     }
     {
-        std::string vert(cpath + "/shader/transform.vert");
-        std::string frag(cpath + "/shader/transform.frag");
+        std::string vert(cpath + "/shader/start/transform.vert");
+        std::string frag(cpath + "/shader/start/transform.frag");
         gl::Shader shader(vert.c_str(), frag.c_str());
 
         shader.use();
