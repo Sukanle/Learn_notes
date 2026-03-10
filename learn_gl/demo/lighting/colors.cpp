@@ -11,16 +11,16 @@
 
 namespace gl = skl::opengl;
 gl::Camera camera(glm::vec3(0.0F, 0.0F, 3.0F));
-constexpr uint32_t WIDHT = 800;
+constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 800;
-GLfloat lastX = WIDHT / 2.0F;
+GLfloat lastX = WIDTH / 2.0F;
 GLfloat lastY = HEIGHT / 2.0F;
-GLboolean is_first = false;
+GLboolean is_first = GL_TRUE;
 
 float deltaTime = 0.0F;
 float lastFrame = 0.0F;
 
-constexpr glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+constexpr glm::vec3 lightPos(1.2F, 1.0F, 2.0F);
 
 void setFrameBufferSize(GLFWwindow *ctx, GLsizei width, GLsizei height);
 void setCursorPos(GLFWwindow *ctx, GLdouble xops, GLdouble ypos);
@@ -36,6 +36,7 @@ void processInput(GLFWwindow *ctx);
     }
 
 int main() {
+    glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -44,7 +45,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif   // __APPLE__
 
-    GLFWwindow *ctx = glfwCreateWindow(WIDHT, HEIGHT, "colors", nullptr, nullptr);
+    GLFWwindow *ctx = glfwCreateWindow(WIDTH, HEIGHT, "colors", nullptr, nullptr);
     ERR(!ctx, ctx, "Error: Failed to create GLFW window.\n");
     glfwMakeContextCurrent(ctx);
     glfwSetFramebufferSizeCallback(ctx, setFrameBufferSize);
@@ -101,7 +102,7 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(0));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, skl::BufferOffset<GLfloat>(0));
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(lightCubeVAO);
@@ -134,11 +135,13 @@ int main() {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glm::mat4 proj(
-                glm::perspective(glm::radians(camera.getZoom()), (GLfloat)WIDHT / (GLfloat)HEIGHT, 0.1F, 100.0F));
+                glm::perspective(glm::radians(camera.getZoom()), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1F, 100.0F));
             glm::mat4 view(camera.getView());
             glm::mat4 model(1.0F);
 
             lightingShader.use();
+            lightingShader.set3F("objectColor", 1.0F, 0.5F, 0.31F);
+            lightingShader.set3F("lightColor", 1.0F, 1.0F, 1.0F);
             lightingShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
             lightingShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
             lightingShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
