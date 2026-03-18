@@ -1,7 +1,7 @@
 // Deps: {{type = "share", name = "skl-gl", priority = 1, cache = true, deps = null}
 
-#include "skl/camera.hpp"
-#include "skl/shader.hpp"
+#include "skl/graphics/gl/camera.hpp"
+#include "skl/graphics/gl/shader.hpp"
 #include "skl/utils.hpp"
 
 #include "glm/gtc/type_ptr.hpp"
@@ -115,15 +115,20 @@ int main() {
 
     {
         glEnable(GL_DEPTH_TEST);
-        std::string cpath(std::filesystem::current_path().string());
+            auto cpath = std::filesystem::current_path();
+            std::error_code ec;
 
-        std::string vert = cpath + "/shader/lighting/colors.vert";
-        std::string frag = cpath + "/shader/lighting/colors.frag";
-        gl::Shader lightingShader(vert.c_str(), frag.c_str());
+            auto vert = cpath / "shader" / "lighting" / "colors.vert";
+            auto frag = cpath / "shader" / "lighting" / "colors.frag";
+            gl::Shader cubeShader;
+            cubeShader.build(ec, vert, frag);
+            ERR(ec, ctx, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
 
-        vert = cpath + "/shader/lighting/light_cube.vert";
-        frag = cpath + "/shader/lighting/light_cube.frag";
-        gl::Shader lightCubeShader(vert.c_str(), frag.c_str());
+            vert = cpath /"shader"/"lighting"/"light_cube.vert";
+            frag = cpath /"shader"/"lighting"/"light_cube.frag";
+            gl::Shader lightShader;
+            lightShader.build(ec, vert, frag);
+            ERR(ec, ctx, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
 
         while (!glfwWindowShouldClose(ctx)) {
             GLfloat cFrame = (GLfloat)glfwGetTime();
@@ -139,12 +144,12 @@ int main() {
             glm::mat4 view(camera.getView());
             glm::mat4 model(1.0F);
 
-            lightingShader.use();
-            lightingShader.set3F("objectColor", 1.0F, 0.5F, 0.31F);
-            lightingShader.set3F("lightColor", 1.0F, 1.0F, 1.0F);
-            lightingShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
-            lightingShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
-            lightingShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
+            cubeShader.use();
+            cubeShader.set3F("objectColor", 1.0F, 0.5F, 0.31F);
+            cubeShader.set3F("lightColor", 1.0F, 1.0F, 1.0F);
+            cubeShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
+            cubeShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
+            cubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
 
             glBindVertexArray(cubeVAO);
             glDrawElements(GL_TRIANGLES, indices.size() * indices[0].size(), GL_UNSIGNED_INT, nullptr);
@@ -152,10 +157,10 @@ int main() {
             model = glm::translate(glm::mat4(1.0F), lightPos);
             model = glm::scale(model, glm::vec3(0.2F));
 
-            lightCubeShader.use();
-            lightCubeShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
-            lightCubeShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
-            lightCubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
+            lightShader.use();
+            lightShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
+            lightShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
+            lightShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
 
             glBindVertexArray(lightCubeVAO);
             glDrawElements(GL_TRIANGLES, indices.size() * indices[0].size(), GL_UNSIGNED_INT, nullptr);

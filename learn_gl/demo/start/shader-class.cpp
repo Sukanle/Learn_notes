@@ -1,5 +1,5 @@
 // Deps: {{type = "share", name = "skl-gl", cache = true, priority = 1, deps = null}}
-#include "skl/shader.hpp"
+#include "skl/graphics/gl/shader.hpp"
 
 #include <filesystem>
 #include <string>
@@ -7,11 +7,11 @@
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
 
-void frameBufferSize([[maybe_unused]] GLFWwindow* window, GLsizei width, GLsizei height) {
+void frameBufferSize([[maybe_unused]] GLFWwindow *window, GLsizei width, GLsizei height) {
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window) {
+void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
@@ -33,21 +33,22 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "shader-class", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "shader-class", nullptr, nullptr);
     ERR(!window, "Error: Faild to Create GLFW window.\n");
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, frameBufferSize);
 
     ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error: Faild to initization GLAD.\n");
 
-    std::string cpath(std::filesystem::current_path().string());
-    std::string vert = cpath + "/shader/start/test.vert";
-    std::string frag = cpath + "/shader/start/test.frag";
+    auto cpath = std::filesystem::current_path();
+    auto vert = cpath / "shader" / "start" / "test.vert";
+    auto frag = cpath / "shader" / "start" / "test.frag";
 
     {
-        gl::Shader shader(vert.data(), frag.data());
-        if (!shader.getSuccess()) return 1;
-
+        gl::Shader shader;
+        std::error_code ec;
+        shader.build(ec, vert, frag);
+        ERR(ec, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
         GLfloat vertices[] = {
             // positions         // colors
             0.5F,  -0.5F, 0.0F, 1.0F, 0.0F, 0.0F,   // bottom right
@@ -63,9 +64,9 @@ int main() {
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, ((void*)0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, ((void *)0));
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, ((void*)(sizeof(GLfloat) * 3)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, ((void *)(sizeof(GLfloat) * 3)));
         glEnableVertexAttribArray(1);
 
         shader.use();

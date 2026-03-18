@@ -1,6 +1,6 @@
 // Deps: {{type = "share", name = "skl-gl", cache = true, priority = 1, deps = null}}
-#include "skl/shader.hpp"
-#include "skl/texture.hpp"
+#include "skl/graphics/gl/shader.hpp"
+#include "skl/graphics/gl/texture.hpp"
 #include "skl/utils.hpp"
 
 #include <filesystem>
@@ -8,7 +8,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <stb_image.h>
 
 constexpr const GLsizei WIDTH = 800;
 constexpr const GLsizei HEIGHT = 600;
@@ -115,7 +114,10 @@ int main() {
     {
         std::string vert(cpath + "/shader/start/transform.vert");
         std::string frag(cpath + "/shader/start/transform.frag");
-        gl::Shader shader(vert.c_str(), frag.c_str());
+        std::error_code ec;
+        gl::Shader shader;
+        shader.build(ec, vert.c_str(), frag.c_str());
+        ERR(ec, "Error: [shader] ID: %d\n; Msg: %s\n", ec.value(), ec.message().c_str());
 
         shader.use();
         shader.set1I("texture0", 0);

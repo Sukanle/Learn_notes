@@ -1,10 +1,8 @@
 // Deps: {{type = "share", name = "skl-gl", priortiy = 1, cache = true, deps = null}}
 
-#include "skl/shader.hpp"
-#include "skl/texture.hpp"
+#include "skl/graphics/gl/shader.hpp"
+#include "skl/graphics/gl/texture.hpp"
 #include "skl/utils.hpp"
-
-#include <stb_image.h>
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -129,7 +127,10 @@ int main() {
     {
         std::string vert = cpath + "/shader/start/3D.vert";
         std::string frag = cpath + "/shader/start/3D.frag";
-        gl::Shader shader(vert.c_str(), frag.c_str());
+        std::error_code ec;
+        gl::Shader shader;
+        shader.build(ec, vert.c_str(), frag.c_str());
+        ERR(ec, "Error: [shader] ID: %d\n; Msg: %s\n", ec.value(), ec.message().c_str());
         shader.use();
         shader.set1I("texture0", 0);
         shader.set1I("texture1", 1);

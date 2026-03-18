@@ -1,7 +1,7 @@
 // Deps: {{type = "share", name = "skl-gl", priority = 1, cache = true, deps = null}
 
-#include "skl/camera.hpp"
-#include "skl/shader.hpp"
+#include "skl/graphics/gl/camera.hpp"
+#include "skl/graphics/gl/shader.hpp"
 #include "skl/utils.hpp"
 
 #include <array>
@@ -17,25 +17,26 @@ namespace gl = skl::opengl;
 
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
-constexpr glm::vec3 lightPos(1.2F, 1.0F, 2.0F);
 
-GLsizei gFbWidth = WIDTH;
-GLsizei gFbHeight = HEIGHT;
+static glm::vec3 lightPos(1.2F, 1.0F, 2.0F);
+static GLsizei gFbWidth = WIDTH;
+static GLsizei gFbHeight = HEIGHT;
 
-GLfloat deltaTime = 0.0F;
-GLfloat lastFrame = 0.0F;
-GLfloat lastX = WIDTH / 2.0F;
-GLfloat lastY = HEIGHT / 2.0F;
-GLboolean is_first = GL_TRUE;
+static GLfloat deltaTime = 0.0F;
+static GLfloat lastFrame = 0.0F;
+static GLfloat lastX = WIDTH / 2.0F;
+static GLfloat lastY = HEIGHT / 2.0F;
+static GLboolean is_first = GL_TRUE;
 
-gl::Camera camera(glm::vec3(0.0F, 0.0F, 3.0F));
+static gl::Camera camera(glm::vec3(0.0F, 0.0F, 3.0F));
 
 void setFramebufferSize(GLFWwindow *ctx, GLsizei width, GLsizei height);
 void setCursorPos(GLFWwindow *ctx, GLdouble xpos, GLdouble ypos);
 void setScroll(GLFWwindow *ctx, GLdouble xoffset, GLdouble yoffset);
 void processInput(GLFWwindow *ctx);
 
-int main() {
+int main(int argc, char *argv[]) {
+
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -52,8 +53,6 @@ int main() {
     glfwSetCursorPosCallback(ctx, setCursorPos);
     glfwSetScrollCallback(ctx, setScroll);
     glfwSetInputMode(ctx, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    glfwGetFramebufferSize(ctx, &gFbWidth, &gFbHeight);
 
     ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error: Failed to initialize GLAD.\n");
 
@@ -144,17 +143,28 @@ int main() {
 
         {
             glEnable(GL_DEPTH_TEST);
-            std::string cpath(std::filesystem::current_path().string());
+            auto cpath = std::filesystem::current_path();
 
-            std::string vert = cpath + "/shader/lighting/basic_lighting.vert";
-            std::string frag = cpath + "/shader/lighting/basic_lighting.frag";
-            gl::Shader lightingShader(vert.c_str(), frag.c_str());
+            auto vert = cpath / "shader" / "lighting" / "materials.vert";
+            auto frag = cpath / "shader" / "lighting" / "materials.frag";
+            std::error_code ec;
+            gl::Shader cubeShader;
+            cubeShader.build(ec, vert, frag);
+            if (ec) {
+                (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
+                goto ERR_MESH_FREE;
+            }
 
-            vert = cpath + "/shader/lighting/light_cube.vert";
-            frag = cpath + "/shader/lighting/light_cube.frag";
-            gl::Shader lightCubeShader(vert.c_str(), frag.c_str());
-            if (!lightingShader.getSuccess() || !lightCubeShader.getSuccess()) goto ERR_MESH_FREE;
+            vert = cpath /"shader"/"lighting"/"light_cube.vert";
+            frag = cpath /"shader"/"lighting"/"light_cube.frag";
+            gl::Shader lightShader;
+            lightShader.build(ec, vert, frag);
+            if (ec) {
+                (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
+                goto ERR_MESH_FREE;
+            }
 
+            glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(1.0F)));
             while (!glfwWindowShouldClose(ctx)) {
                 GLfloat cFrame = (GLfloat)glfwGetTime();
                 deltaTime = cFrame - lastFrame;
@@ -164,31 +174,46 @@ int main() {
                 glClearColor(0.1F, 0.1F, 0.1F, 1.0F);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                glm::mat4 proj(
-                    glm::perspective(glm::radians(camera.getZoom()), (GLfloat)gFbWidth / (GLfloat)gFbHeight, 0.1F, 100.0F));
+                glm::mat4 proj(glm::perspective(glm::radians(camera.getZoom()), (GLfloat)gFbWidth / (GLfloat)gFbHeight,
+                                                0.1F, 100.0F));
                 glm::mat4 view(camera.getView());
                 glm::mat4 model(1.0F);
 
 #define RESLOVE_3V(vec) (vec).x, (vec).y, (vec).z
+                glm::vec3 lightColor;
+                lightColor.x = sinf(cFrame * 2.0F);
+                lightColor.y = sinf(cFrame * 0.7F);
+                lightColor.z = sinf(cFrame * 1.3F);
+                glm::vec3 diffuseColor = lightColor * glm::vec3(0.5F);
+                glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2F);
+                cubeShader.use();
+                cubeShader.set3F("light.position", RESLOVE_3V(lightPos));
+                cubeShader.set3F("light.ambient", RESLOVE_3V(ambientColor));
+                cubeShader.set3F("light.diffuse", RESLOVE_3V(diffuseColor));
+                cubeShader.set3F("light.specular", 1.0F, 1.0F, 1.0F);
 
-                lightingShader.use();
-                lightingShader.set3F("objectColor", 1.0F, 0.5F, 0.31F);
-                lightingShader.set3F("lightColor", 1.0F, 1.0F, 1.0F);
-                lightingShader.set3F("lightPos", RESLOVE_3V(lightPos));
-                lightingShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
-                lightingShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
-                lightingShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
+                cubeShader.set3F("material.ambient", 1.0F, 0.5F, 0.31F);
+                cubeShader.set3F("material.diffuse", 1.0F, 0.5F, 0.31F);
+                cubeShader.set3F("material.specular", 0.5F, 0.5F, 0.5F);
+                cubeShader.set1F("material.shininess", 32.0F);
+                cubeShader.set3F("viewPos", 1, glm::value_ptr(camera.getPosition()));
+                cubeShader.setMat3F("normalMatrix", 1, GL_FALSE, glm::value_ptr(normalMatrix));
+                cubeShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
+                cubeShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
+                cubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
 
                 glBindVertexArray(cubeVAO);
                 glDrawElements(GL_TRIANGLES, indices.size() * indices[0].size(), GL_UNSIGNED_BYTE, nullptr);
 
+                lightPos.x = 1.0F + (sinf(cFrame) * 2.0F);
+                lightPos.y = sinf(cFrame / 2.0F) * 1.0F;
                 model = glm::translate(glm::mat4(1.0F), lightPos);
                 model = glm::scale(model, glm::vec3(0.2F));
 
-                lightCubeShader.use();
-                lightCubeShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
-                lightCubeShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
-                lightCubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
+                lightShader.use();
+                lightShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
+                lightShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
+                lightShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
 
                 glBindVertexArray(lightCubeVAO);
                 glDrawElements(GL_TRIANGLES, indices.size() * indices[0].size(), GL_UNSIGNED_BYTE, nullptr);

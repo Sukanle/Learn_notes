@@ -1,13 +1,10 @@
 // Deps: {{type = "share", name = "skl-gl", cache = true, priority = 1, deps = null}}
-#include "skl/shader.hpp"
+#include "skl/graphics/gl/shader.hpp"
+#include "skl/graphics/gl/texture.hpp"
 #include "skl/utils.hpp"
-#include "skl/texture.hpp"
 
-#include <filesystem>
 #include <array>
-
-// #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <filesystem>
 
 #define ERR(cond, ...)                      \
     if (cond) {                             \
@@ -16,19 +13,18 @@
         return 1;                           \
     }
 
-namespace skl::opengl {
-}   // namespace skl::opengl
+namespace skl::opengl {}   // namespace skl::opengl
 
 namespace gl = skl::opengl;
 
 GLfloat mixValue = 0.2F;
 
-void frameBufferSize(GLFWwindow* window, GLsizei width, GLsizei height) {
+void frameBufferSize(GLFWwindow *window, GLsizei width, GLsizei height) {
     (void)window;
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window) {
+void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         mixValue += 0.01F;
@@ -52,7 +48,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "texture", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "texture", nullptr, nullptr);
     ERR(!window, "Error: Failed to Create GLFW window.\n");
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, frameBufferSize);
@@ -60,10 +56,14 @@ int main() {
     ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Error: Failed to initization GLAD.\n");
 
     GLfloat vertices[] = {
-        0.5F,  0.5F,  0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F,   // top right
-        0.5F,  -0.5F, 0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 0.0F,   // bottom right
-        -0.5F, -0.5F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,   // bottom left
-        -0.5F, 0.5F,  0.0F, 1.0F, 1.0F, 0.0F, 0.0F, 1.0F    // top left
+        0.5F,  0.5F,  0.0F, 1.0F, 0.0F,
+        0.0F,  1.0F,  1.0F,   // top right
+        0.5F,  -0.5F, 0.0F, 0.0F, 1.0F,
+        0.0F,  1.0F,  0.0F,   // bottom right
+        -0.5F, -0.5F, 0.0F, 0.0F, 0.0F,
+        1.0F,  0.0F,  0.0F,   // bottom left
+        -0.5F, 0.5F,  0.0F, 1.0F, 1.0F,
+        0.0F,  0.0F,  1.0F   // top left
         // 0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 0.55f, 0.55f,   // top right
         // 0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.55f, 0.45f,   // bottom right
         // -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.45f, 0.45f,   // bottom left
@@ -102,7 +102,7 @@ int main() {
     texture_arr[1].path = cpath + "/resources/textures/awesomeface.png";
     stbi_set_flip_vertically_on_load(GL_TRUE);
 
-    for (auto& texture : texture_arr) {
+    for (auto &texture : texture_arr) {
         glGenTextures(1, &texture.ID);
         glBindTexture(GL_TEXTURE_2D, texture.ID);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -125,7 +125,10 @@ int main() {
     {
         std::string vert = cpath + "/shader/start/texture.vert";
         std::string frag = cpath + "/shader/start/texture.frag";
-        gl::Shader shader(vert.c_str(), frag.c_str());
+        std::error_code ec;
+        gl::Shader shader;
+        shader.build(ec, vert.c_str(), frag.c_str());
+        ERR(ec, "Error: [shader] ID: %d\n Msg: %s\n", ec.value(), ec.message().c_str());
         shader.use();
         glUniform1i(glGetUniformLocation(shader.getID(), "texture1"), 0);
         shader.set1I("texture2", 1);

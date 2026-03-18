@@ -1,5 +1,5 @@
 set_project("opengl")
-set_version("0.1.3")
+set_version("0.1.5")
 includes("@builtin/check")
 
 add_includedirs(os.scriptdir() .. "/include", os.scriptdir() .. "/extern")
@@ -7,7 +7,9 @@ add_includedirs(os.scriptdir() .. "/include", os.scriptdir() .. "/extern")
 set_languages("c99", "cxx20")
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate")
-
+if is_mode("debug") then
+	add_defines("__DEBUG__", "_DEBUG", "DEBUG")
+end
 local libs = {
 	{
 		path = {
@@ -19,9 +21,11 @@ local libs = {
 	},
 	{
 		path = {
-			os.scriptdir() .. "/src/shader.cpp",
-			os.scriptdir() .. "/src/glad.c",
-			os.scriptdir() .. "/src/camera.cpp",
+			os.scriptdir() .. "/src/graphics/gl/shader.cpp",
+			os.scriptdir() .. "/extern/glad/glad.c",
+			os.scriptdir() .. "/src/graphics/gl/camera.cpp",
+			os.scriptdir() .. "/src/graphics/gl/texture.cpp",
+			os.scriptdir() .. "/src/graphics/error.cpp",
 		},
 		name = "skl-gl",
 		type = "share",
@@ -41,6 +45,7 @@ for i = 1, #libs do
 	set_kind("shared")
 	add_files(libs[i].path)
 	add_defines("SHARED")
+	add_cxflags("-Wno-parentheses-equality")
 	for j = 1, #libs[i].package do
 		add_packages(libs[i].package[j])
 	end
@@ -129,9 +134,8 @@ for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/**/*.cpp")) do
 	target(basename)
 	set_kind("binary")
 	add_files(filepath)
-	add_cxflags("-Wno-parentheses-equality")
 	add_packages("glm")
-	check_cincludes("STB_IMAGE_IMPLEMENTATION", "stb_image.h", { includedirs = os.scriptdir() .. "/include" })
+	add_cxflags("-Wno-parentheses-equality")
 	auto_deps(filepath, { "type", "name", "cache", "priority", "deps" }, function(tab, pos)
 		local is_cache = tab[3][pos]
 		if is_cache == false then
@@ -149,5 +153,5 @@ end
 for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/**/*.c")) do
 	target(path.basename(filepath))
 	set_kind("binary")
-	add_files(filepath, os.scriptdir() .. "/src/glad.c")
+	add_files(filepath, os.scriptdir() .. "/extern/glad/glad.c")
 end

@@ -1,4 +1,4 @@
-#include "skl/camera.hpp"
+#include "skl/graphics/gl/camera.hpp"
 
 namespace skl::opengl {
 void Camera::updateCameraVectors() noexcept {

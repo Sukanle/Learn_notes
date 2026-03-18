@@ -21,4 +21,13 @@ inline size_t aligned64(size_t n) {
     return aligned(64, n);
 }
 
+typedef int SKLErr ;
+
+enum UpdateMode : uint8_t {
+    merge,
+    replace,
+    append,
+    update,
+    remove,
+};
 }   // namespace skl
