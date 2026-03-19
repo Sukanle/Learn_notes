@@ -63,8 +63,7 @@ private:
     std::vector<TexConfig> _cfgs;
     static GLuint _bind_id;
     bool _dirty;
-    bool _autoUnit;
-    int _unitPos;
+    size_t _unitPos;
     void apply(GLenum pname, const TexParam &param) const noexcept;
     void apply(TexConfig &cfg) const noexcept {
         apply(cfg.pname, cfg.param);
@@ -77,12 +76,14 @@ public:
                        GLint mipLevels = 1) noexcept;
     ~Texture2D() noexcept;
 
-    static GLint GetGLFormat(int channels)noexcept;
+    static GLint getGLformat(int channels)noexcept;
     static void setflipY(bool flip) noexcept {
         stbi_set_flip_vertically_on_load(flip);
     }
-    Texture2D &bind() noexcept;
 
+    [[nodiscard]] auto getUnitPos() const noexcept -> decltype(_unitPos) {return _unitPos;}
+    [[nodiscard]] auto getTex() const noexcept -> const decltype(_tex)& {return _tex;}
+    Texture2D &bind() noexcept;
     Texture2D &load(std::error_code &ec, const std::filesystem::path &tex, GLint intformat = GL_FALSE,
                     GLenum type = GL_UNSIGNED_BYTE, GLenum mipLevels = 1) noexcept;
     template<typename T>
@@ -90,21 +91,23 @@ public:
     Texture2D &set_config(UpdateMode mode, const std::vector<TexConfig> &cfgs) noexcept;
     Texture2D &set_config(UpdateMode policy, std::initializer_list<TexConfig> cfgs) noexcept;
     Texture2D &update() noexcept;
+    Texture2D &acquire(std::error_code &ec, size_t pos = SIZE_T_MAX) noexcept;
+    Texture2D &release(std::error_code &ec) noexcept;
     Texture2D &activate(std::error_code &ec) noexcept;
-    Texture2D &activate(std::error_code &ec, int pos) noexcept;
 };
 
 class TextureUnit {
 public:
     static TextureUnit &instance() noexcept;
-    int acquire(std::error_code &ec) noexcept;
-    void release(std::error_code &ec, int unit, int pos) noexcept;
-    void activate(std::error_code &ec, int unit, int pos) noexcept;
+    [[nodiscard]]size_t acquire(std::error_code &ec, GLuint TexID, size_t pos = SIZE_T_MAX) noexcept;
+    void release(std::error_code &ec, size_t pos) noexcept;
+    void activate(std::error_code &ec, size_t pos) noexcept;
+    [[nodiscard]]bool check(std::error_code &ec, size_t TexID, size_t pos) const noexcept;
 
 private:
-    int _maxUnits;
-    int _activeUnit;
-    std::vector<int> _units;
+    GLuint _maxUnits;
+    size_t _activePos;
+    std::vector<GLuint> _units;
     TextureUnit() noexcept;
 };
 }   // namespace skl::opengl

@@ -35,9 +35,8 @@ void merge_cfgs(std::vector<TexConfig> &current, const std::vector<TexConfig> &i
 
 void append_cfgs(std::vector<TexConfig> &current, const std::vector<TexConfig> &incoming) {
     for (const auto &newCfg : incoming) {
-        const bool exists = std::ranges::any_of(current, [pname = newCfg.pname](const TexConfig &oldCfg) {
-            return oldCfg.pname == pname;
-        });
+        const bool exists = std::ranges::any_of(
+            current, [pname = newCfg.pname](const TexConfig &oldCfg) { return oldCfg.pname == pname; });
         if (!exists) {
             current.push_back(newCfg);
             current.back().dirty = true;
@@ -61,9 +60,8 @@ void remove_cfgs(std::vector<TexConfig> &current, const std::vector<TexConfig> &
     pnames.reserve(incoming.size());
     std::ranges::transform(incoming, std::back_inserter(pnames), [](const TexConfig &cfg) { return cfg.pname; });
 
-    std::erase_if(current, [&pnames](const TexConfig &cfg) {
-        return std::ranges::find(pnames, cfg.pname) != pnames.end();
-    });
+    std::erase_if(current,
+                  [&pnames](const TexConfig &cfg) { return std::ranges::find(pnames, cfg.pname) != pnames.end(); });
 }
 }   // namespace
 
@@ -148,11 +146,10 @@ constexpr bool TexConfig::operator!=(const TexConfig &other) const noexcept {
 
 Texture2D::Texture2D() noexcept
     : _dirty(false)
-    , _autoUnit(false)
-    , _unitPos(-1) {
+    , _unitPos(SIZE_T_MAX) {
     glGenTextures(1, &_tex.ID);
 }
-GLint Texture2D::GetGLFormat(int channels) noexcept{
+GLint Texture2D::getGLformat(int channels) noexcept {
     switch (channels) {
         case 1:  return GL_RED;
         case 2:  return GL_RG;
@@ -164,15 +161,14 @@ GLint Texture2D::GetGLFormat(int channels) noexcept{
 Texture2D::Texture2D(const std::filesystem::path &texpath, GLenum intformat, GLenum type, GLint mipLevels) noexcept
     : _tex(texpath.string(), intformat, type, mipLevels)
     , _dirty(false)
-    , _autoUnit(false)
-    , _unitPos(-1) {
+    , _unitPos(SIZE_T_MAX) {
     glGenTextures(1, &_tex.ID);
 }
 Texture2D::~Texture2D() noexcept {
-    if (_unitPos >= 0) {
+    if (_unitPos != SIZE_T_MAX) {
         std::error_code ec;
-        const auto texUnitId = static_cast<int>(_tex.ID);
-        TextureUnit::instance().release(ec, texUnitId, _unitPos);
+        TextureUnit::instance().release(ec, _unitPos);
+        glDeleteTextures(1, &_tex.ID);
     }
     if (_bind_id == _tex.ID) _bind_id = 0;
 }
@@ -231,13 +227,13 @@ Texture2D &Texture2D::load(std::error_code &ec, const std::filesystem::path &tex
         return *this;
     }
 
-    const auto dataFormat = GetGLFormat(_tex.nrChannels);
+    const auto dataFormat = getGLformat(_tex.nrChannels);
     if (intformat == GL_FALSE) {
         switch (dataFormat) {
             case GL_RED: intformat = GL_R8; break;
-            case GL_RG: intformat = GL_RG8; break;
+            case GL_RG:  intformat = GL_RG8; break;
             case GL_RGB: intformat = GL_RGB8; break;
-            default: intformat = GL_RGBA8; break;
+            default:     intformat = GL_RGBA8; break;
         }
     }
     _tex.intformat = intformat;
@@ -265,10 +261,10 @@ Texture2D &Texture2D::set_config(UpdateMode mode, const std::vector<TexConfig> &
 
     switch (mode) {
         case UpdateMode::replace: replace_cfgs(_cfgs, cfgs); break;
-        case UpdateMode::merge: merge_cfgs(_cfgs, cfgs, _dirty); break;
-        case UpdateMode::append: append_cfgs(_cfgs, cfgs); break;
-        case UpdateMode::update: update_cfgs(_cfgs, cfgs, _dirty); break;
-        case UpdateMode::remove: remove_cfgs(_cfgs, cfgs); break;
+        case UpdateMode::merge:   merge_cfgs(_cfgs, cfgs, _dirty); break;
+        case UpdateMode::append:  append_cfgs(_cfgs, cfgs); break;
+        case UpdateMode::update:  update_cfgs(_cfgs, cfgs, _dirty); break;
+        case UpdateMode::remove:  remove_cfgs(_cfgs, cfgs); break;
     }
 
     _dirty = true;
@@ -291,59 +287,33 @@ Texture2D &Texture2D::update() noexcept {
     return *this;
 }
 
-Texture2D& Texture2D::activate(std::error_code &ec) noexcept {
+Texture2D &Texture2D::acquire(std::error_code &ec, size_t pos) noexcept {
     ec.clear();
     auto &unitMgr = TextureUnit::instance();
-    const auto texUnitId = static_cast<int>(_tex.ID);
-
-    if (_unitPos < 0) {
-        _unitPos = unitMgr.acquire(ec);
+    if (_unitPos == SIZE_T_MAX) {
+        auto unitPos = unitMgr.acquire(ec, _tex.ID, pos);
         if (ec) return *this;
-        _autoUnit = true;
+        _unitPos = unitPos;
     }
+    return *this;
+}
+Texture2D &Texture2D::activate(std::error_code &ec) noexcept {
+    ec.clear();
+    auto &unitMgr = TextureUnit::instance();
 
-    unitMgr.activate(ec, texUnitId, _unitPos);
+    unitMgr.activate(ec, _unitPos);
     if (ec) return *this;
 
     glBindTexture(GL_TEXTURE_2D, _tex.ID);
     return *this;
 }
 
-Texture2D& Texture2D::activate(std::error_code &ec, int pos) noexcept {
-    ec.clear();
-    if (pos < 0) {
-        ec = make_error_code(graphics_ec::invalid_argument);
-        return *this;
-    }
-
-    auto &unitMgr = TextureUnit::instance();
-    const auto texUnitId = static_cast<int>(_tex.ID);
-
-    if (_unitPos >= 0 && _unitPos != pos) {
-        unitMgr.release(ec, texUnitId, _unitPos);
-        if (ec) return *this;
-        _unitPos = -1;
-    }
-
-    if (_unitPos < 0) {
-        _unitPos = unitMgr.acquire(ec);
-        if (ec) return *this;
-    }
-
-    _autoUnit = false;
-    unitMgr.activate(ec, texUnitId, _unitPos);
-    if (ec) return *this;
-
-    bind();
-    return *this;
-}
-
 TextureUnit::TextureUnit() noexcept
-    : _activeUnit(-1) {
+    : _activePos(-1) {
     GLint maxUnits = 0;
     glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxUnits);
     _maxUnits = maxUnits;
-    _units = std::vector<int>(_maxUnits, 0);
+    _units = std::vector(_maxUnits, 0U);
 }
 
 TextureUnit &TextureUnit::instance() noexcept {
@@ -351,52 +321,63 @@ TextureUnit &TextureUnit::instance() noexcept {
     return instance;
 }
 
-int TextureUnit::acquire(std::error_code &ec) noexcept {
+size_t TextureUnit::acquire(std::error_code &ec, GLuint TexID, size_t pos) noexcept {
     ec.clear();
 
-    auto it = std::find(_units.begin(), _units.end(), 0);
+    if (pos != SIZE_T_MAX) {
+        if (pos >= _maxUnits)
+            ec = make_error_code(graphics_ec::invalid_argument);
+        else if (_units[pos] != TexID || _units[pos] != 0)
+            ec = make_error_code(graphics_ec::texture_unit_mismatch);
+        else
+            _units[pos] = TexID;
+        return pos;
+    }
+
+    auto it = std::ranges::find(_units, 0);
     if (it == _units.end()) {
         ec = make_error_code(graphics_ec::texture_unit_exhausted);
         return -1;
     }
+    *it = TexID;
 
-    int index = std::distance(_units.begin(), it);
-    return index;
+    return std::distance(_units.begin(), it);
 }
 
 // 释放单元
-void TextureUnit::release(std::error_code &ec, int unit, int pos) noexcept {
+void TextureUnit::release(std::error_code &ec, size_t pos) noexcept {
     ec.clear();
-
-    if ((unit <= 0 && pos < 0) || pos >= _maxUnits) {
+    if (pos >= _maxUnits) {
         ec = make_error_code(graphics_ec::invalid_argument);
         return;
     }
 
-    if (_units[pos] != unit) {
-        ec = make_error_code(graphics_ec::texture_unit_mismatch);
-        return;
-    }
     _units[pos] = 0;
-    if (_activeUnit == pos) _activeUnit = -1;
-    
+    if (_activePos == pos) _activePos = SIZE_T_MAX;
 }
 
-void TextureUnit::activate(std::error_code &ec, int unit, int pos) noexcept {
+void TextureUnit::activate(std::error_code &ec, size_t pos) noexcept {
     ec.clear();
 
-    if ((unit < 0 && pos < 0) || pos >= _maxUnits) {
+    if (pos >= _maxUnits) {
         ec = make_error_code(graphics_ec::invalid_argument);
         return;
     }
 
-    if (_activeUnit == pos || (pos >= 0 && _units[pos] == unit)) return;
+    if (_activePos == pos || _units[pos]) return;
 
-    if (_units[pos] != 0) {
-        ec = make_error_code(graphics_ec::texture_unit_mismatch);
-        return;
-    }
-    _activeUnit = pos;
-    glActiveTexture(GL_TEXTURE0 + _activeUnit);
+    _activePos = pos;
+    glActiveTexture(GL_TEXTURE0 + _activePos);
 }
+
+
+bool TextureUnit::check(std::error_code &ec, size_t TexID, size_t pos) const noexcept {
+    ec.clear();
+    if (pos >= _maxUnits) {
+        ec = make_error_code(graphics_ec::invalid_argument);
+        return false;
+    }
+    return _units[pos] == TexID;
+}
+
 }   // namespace skl::opengl

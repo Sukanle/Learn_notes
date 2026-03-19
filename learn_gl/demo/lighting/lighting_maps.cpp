@@ -143,7 +143,12 @@ int main() {
             .set_config(GL_TEXTURE_WRAP_T, GL_REPEAT)
             .set_config(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
             .set_config(GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-            .update();
+            .update()
+            .acquire(ec);
+            if (ec) {
+                (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
+                goto ERR_MESH_FREE;
+            }
         {
             glEnable(GL_DEPTH_TEST);
             glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(1.0F)));
@@ -155,7 +160,7 @@ int main() {
             std::error_code ec;
             gl::Shader cubeShader;
             gl::Shader lightShader;
-            
+
             cubeShader.build(ec, vert, frag);
             if (ec) {
                 (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
@@ -170,7 +175,7 @@ int main() {
                 goto ERR_SHADER_FREE;
             }
             cubeShader.use();
-            cubeShader.set1I("material.diffuse", 0);
+            cubeShader.set1I("material.diffuse", diffuseMap.getUnitPos());
 
 
             while (!glfwWindowShouldClose(ctx)) {
