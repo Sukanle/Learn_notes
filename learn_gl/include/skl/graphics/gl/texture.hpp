@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include <filesystem>
+#include <stb_image.h>
 
 namespace skl::opengl {
 // using TexParam = std::variant<GLint, GLfloat, GLint[4], GLfloat[4]>;
@@ -76,20 +76,19 @@ public:
                        GLint mipLevels = 1) noexcept;
     ~Texture2D() noexcept;
 
-    static GLint getGLformat(int channels)noexcept;
-    static void setflipY(bool flip) noexcept {
-        stbi_set_flip_vertically_on_load(flip);
-    }
+    static GLint getGLformat(int channels) noexcept;
+    static void setflipY(bool flip) noexcept { stbi_set_flip_vertically_on_load(flip); }
 
-    [[nodiscard]] auto getUnitPos() const noexcept -> decltype(_unitPos) {return _unitPos;}
-    [[nodiscard]] auto getTex() const noexcept -> const decltype(_tex)& {return _tex;}
+    [[nodiscard]] auto getUnitPos() const noexcept -> decltype(_unitPos) { return _unitPos; }
+    [[nodiscard]] auto getTex() const noexcept -> const decltype(_tex) & { return _tex; }
+    [[nodiscard]] auto getCfgs() const noexcept -> const decltype(_cfgs) & { return _cfgs; }
     Texture2D &bind() noexcept;
     Texture2D &load(std::error_code &ec, const std::filesystem::path &tex, GLint intformat = GL_FALSE,
                     GLenum type = GL_UNSIGNED_BYTE, GLenum mipLevels = 1) noexcept;
     template<typename T>
     Texture2D &set_config(GLenum pname, T value) noexcept;
-    Texture2D &set_config(UpdateMode mode, const std::vector<TexConfig> &cfgs) noexcept;
-    Texture2D &set_config(UpdateMode policy, std::initializer_list<TexConfig> cfgs) noexcept;
+    Texture2D &set_config(const std::vector<TexConfig> &cfgs, UpdateMode policy = UpdateMode::replace) noexcept;
+    Texture2D &set_config(std::initializer_list<TexConfig> cfgs, UpdateMode policy = UpdateMode::replace) noexcept;
     Texture2D &update() noexcept;
     Texture2D &acquire(std::error_code &ec, size_t pos = SIZE_T_MAX) noexcept;
     Texture2D &release(std::error_code &ec) noexcept;
@@ -99,10 +98,10 @@ public:
 class TextureUnit {
 public:
     static TextureUnit &instance() noexcept;
-    [[nodiscard]]size_t acquire(std::error_code &ec, GLuint TexID, size_t pos = SIZE_T_MAX) noexcept;
+    [[nodiscard]] size_t acquire(std::error_code &ec, GLuint TexID, size_t pos = SIZE_T_MAX) noexcept;
     void release(std::error_code &ec, size_t pos) noexcept;
     void activate(std::error_code &ec, size_t pos) noexcept;
-    [[nodiscard]]bool check(std::error_code &ec, size_t TexID, size_t pos) const noexcept;
+    [[nodiscard]] bool check(std::error_code &ec, size_t TexID, size_t pos) const noexcept;
 
 private:
     GLuint _maxUnits;

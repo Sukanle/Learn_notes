@@ -2,7 +2,7 @@
 
 #include "skl/graphics/gl/camera.hpp"
 #include "skl/graphics/gl/shader.hpp"
-#include "skl/utils.hpp"
+#include "skl/utils/utils.hpp"
 
 #include "glm/gtc/type_ptr.hpp"
 

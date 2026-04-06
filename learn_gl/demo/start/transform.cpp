@@ -1,7 +1,7 @@
 // Deps: {{type = "share", name = "skl-gl", cache = true, priority = 1, deps = null}}
 #include "skl/graphics/gl/shader.hpp"
 #include "skl/graphics/gl/texture.hpp"
-#include "skl/utils.hpp"
+#include "skl/utils/utils.hpp"
 
 #include <filesystem>
 

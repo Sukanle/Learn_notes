@@ -5,16 +5,20 @@
 #import "skl/graphics/gl/texture.hpp"
 #include "skl/utils/utils.hpp"
 
-
 #include <array>
 #include <filesystem>
 #include <glm/gtc/type_ptr.hpp>
 
-#define ERR(conf, ...)                      \
+#define ERR_FREE(conf, free, ...)           \
     if (conf) {                             \
         (void)fprintf(stderr, __VA_ARGS__); \
-        goto ERR_CTX_FREE;                  \
+        goto ERR_##free##_FREE;             \
     }
+#define ERR_CTX(conf, ...) ERR_FREE(conf, CTX, __VA_ARGS__);
+#define ERR_EC(ec, free, type) \
+    ERR_FREE(ec, free, "Error: [" type "]\nID: %d\nMsg: %s\n", ec.value(), ec.message().c_str())
+#define ERR_TEX(ec) ERR_EC(ec, MESH, "texture")
+#define ERR_SHD(ec) ERR_EC(ec, SHADER, "shader")
 
 namespace gl = skl::opengl;
 
@@ -36,10 +40,7 @@ static GLfloat lastY = HEIGHT / 2.0F;
 static glm::vec3 lightPos(1.2F, 1.0F, 2.0F);
 static gl::Camera camera(glm::vec3(0.0F, 0.0F, 3.0F));
 
-int main(int argc, char **argv) {
-    bool enableSpecular = false;
-    if (argc == 2) enableSpecular = atoi(argv[1]);
-
+int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -48,14 +49,14 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif   // __APPLE__
 
-    GLFWwindow *ctx = glfwCreateWindow(WIDTH, HEIGHT, "lighting_maps", nullptr, nullptr);
-    ERR(!ctx, "Error: Failed to create GLFW window.\n");
+    GLFWwindow *ctx = glfwCreateWindow(WIDTH, HEIGHT, "casters_point", nullptr, nullptr);
+    ERR_CTX(!ctx, "Error: Failed to create GLFW window.\n");
     glfwMakeContextCurrent(ctx);
     glfwSetFramebufferSizeCallback(ctx, setFramebufferSize);
     glfwSetCursorPosCallback(ctx, setCursorPos);
     glfwSetScrollCallback(ctx, setScroll);
     glfwSetInputMode(ctx, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    ERR(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Erro: Failed to initialize GLAD.\n");
+    ERR_CTX(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Erro: Failed to initialize GLAD.\n");
     {
         // clang-format off
         std::array vertices = {
@@ -99,18 +100,32 @@ int main(int argc, char **argv) {
             std::array<uint8_t, 6>{16, 17, 18, 18, 19, 16},
             std::array<uint8_t, 6>{20, 21, 22, 22, 23, 20}
         };
+
+        std::array cubePositions = {
+            glm::vec3( 0.0F,  0.0F,  0.0F),
+            glm::vec3( 2.0F,  5.0F, -15.0F),
+            glm::vec3(-1.5F, -2.2F, -2.5F),
+            glm::vec3(-3.8F, -2.0F, -12.3F),
+            glm::vec3( 2.4F, -0.4F, -3.5F),
+            glm::vec3(-1.7F,  3.0F, -7.5F),
+            glm::vec3( 1.3F, -2.0F, -2.5F),
+            glm::vec3( 1.5F,  2.0F, -2.5F),
+            glm::vec3( 1.5F,  0.2F, -1.5F),
+            glm::vec3(-1.3F,  1.0F, -1.5F)
+        };
         // clang-format on
-        // first, configure the cube's VAO (and VBO)
+
         uint32_t cubeVAO = 0;
         uint32_t lightVAO = 0;
         uint32_t VBO = 0;
         uint32_t EBO = 0;
+
         glGenVertexArrays(1, &cubeVAO);
         glGenVertexArrays(1, &lightVAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
 
-        constexpr GLsizei kIndexCount = (GLsizei)(indices.size() * indices[0].size());
+        constexpr auto kIndexCount = (GLsizei)(indices.size() * indices[0].size());
 
         glBindVertexArray(cubeVAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -131,18 +146,15 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::BufferOffset<GLfloat>(0));
         glEnableVertexAttribArray(0);
 
-        auto cpath = std::filesystem::current_path();
+        std::error_code ec;
         gl::Texture2D::setflipY(true);
         gl::Texture2D diffuseMap;
-        auto texPath = cpath / "resources" / "textures" / "container2.png";
-        std::error_code ec;
         gl::Texture2D specularMap;
+        auto cpath = std::filesystem::current_path();
+        auto texPath = cpath / "resources" / "textures" / "container2.png";
 
         diffuseMap.load(ec, texPath);
-        if (ec) {
-            fprintf(stderr, "Error: [texture] ID: %d\nMsg: %s\n", ec.value(), ec.message().c_str());
-            goto ERR_MESH_FREE;
-        }
+        ERR_TEX(ec);
         diffuseMap.bind()
             .set_config(GL_TEXTURE_WRAP_S, GL_REPEAT)
             .set_config(GL_TEXTURE_WRAP_T, GL_REPEAT)
@@ -150,53 +162,33 @@ int main(int argc, char **argv) {
             .set_config(GL_TEXTURE_MAG_FILTER, GL_LINEAR)
             .update()
             .acquire(ec);
-        if (ec) {
-            (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
-            goto ERR_MESH_FREE;
-        }
+        ERR_TEX(ec);
 
-        if (enableSpecular) {
-            texPath = cpath / "resources" / "textures" / "container2_specular.png";
-            specularMap.load(ec, texPath);
-            if (ec) {
-                fprintf(stderr, "Error: [texture] ID: %d\nMsg: %s\n", ec.value(), ec.message().c_str());
-                goto ERR_MESH_FREE;
-            }
-            specularMap.bind().set_config(diffuseMap.getCfgs()).update().acquire(ec);
-            if (ec) {
-                (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
-                goto ERR_MESH_FREE;
-            }
-        }
+        texPath = cpath / "resources" / "textures" / "container2_specular.png";
+        specularMap.load(ec, texPath);
+        ERR_TEX(ec);
+        specularMap.bind().set_config(diffuseMap.getCfgs()).update().acquire(ec);
+        ERR_TEX(ec);
+
         {
             glEnable(GL_DEPTH_TEST);
-            glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(1.0F)));
-
-            auto cpath = std::filesystem::current_path();
 
             auto vert = cpath / "shader" / "lighting" / "lighting_maps.vert";
-            auto frag = cpath / "shader" / "lighting";
-            frag = enableSpecular ? frag / "specular_maps.frag" : frag / "lighting_maps.frag";
-            std::error_code ec;
+            auto frag = cpath / "shader" / "lighting" / "casters_point.frag";
             gl::Shader cubeShader;
             gl::Shader lightShader;
 
             cubeShader.build(ec, vert, frag);
-            if (ec) {
-                (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
-                goto ERR_SHADER_FREE;
-            }
+            ERR_SHD(ec);
 
             vert = cpath / "shader" / "lighting" / "light_cube.vert";
             frag = cpath / "shader" / "lighting" / "light_cube.frag";
             lightShader.build(ec, vert, frag);
-            if (ec) {
-                (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
-                goto ERR_SHADER_FREE;
-            }
+            ERR_SHD(ec);
+
             cubeShader.use();
             cubeShader.set1I("material.diffuse", diffuseMap.getUnitPos());
-            if (enableSpecular) cubeShader.set1I("material.specular", specularMap.getUnitPos());
+            cubeShader.set1I("material.specular", specularMap.getUnitPos());
 
 
             while (!glfwWindowShouldClose(ctx)) {
@@ -216,15 +208,15 @@ int main(int argc, char **argv) {
 #define RESLOVE_3V(vec) (vec).x, (vec).y, (vec).z
 
                 cubeShader.use();
-                cubeShader.set3F("light.position", RESLOVE_3V(lightPos));
+                cubeShader.set1F("light.constant", 1.0F);
+                cubeShader.set1F("light.linear", 0.09F);
+                cubeShader.set1F("light.quadratic", 0.032F);
+                cubeShader.set1F("material.shininess", 32.0F);
                 cubeShader.set3F("light.ambient", 0.2F, 0.2F, 0.2F);
                 cubeShader.set3F("light.diffuse", 0.5F, 0.5F, 0.5F);
                 cubeShader.set3F("light.specular", 1.0F, 1.0F, 1.0F);
-                if (!enableSpecular)
-                    cubeShader.set3F("material.specular", 0.5F, 0.5F, 0.5F);
-                cubeShader.set1F("material.shininess", 32.0F);
+                cubeShader.set3F("light.position", RESLOVE_3V(lightPos));
                 cubeShader.set3F("viewPos", RESLOVE_3V(camera.getPosition()));
-                cubeShader.setMat3F("normalMatrix", 1, GL_FALSE, glm::value_ptr(normalMatrix));
                 cubeShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
                 cubeShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
                 cubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
@@ -234,17 +226,22 @@ int main(int argc, char **argv) {
                     (void)fprintf(stderr, "Error: [texture]\nID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
                     break;
                 }
-                if (enableSpecular) {
-                    specularMap.activate(ec);
-                    if (ec) {
-                        (void)fprintf(stderr, "Error: [texture]\nID: %d\nmessage: %s\n", ec.value(),
-                                      ec.message().c_str());
-                        break;
-                    }
+                specularMap.activate(ec);
+                if (ec) {
+                    (void)fprintf(stderr, "Error: [texture]\nID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
+                    break;
                 }
 
                 glBindVertexArray(cubeVAO);
-                glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_BYTE, nullptr);
+                for (unsigned int i = 0; i < 10; i++) {
+                    model = glm::translate(glm::mat4(1.0F), cubePositions[i]);
+                    model = glm::rotate(model, glm::radians(20.0F * i), glm::vec3(1.0F, 0.3F, 0.5F));
+                    cubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
+                    cubeShader.setMat3F("normalMatrix", 1, GL_FALSE,
+                                        glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(model)))));
+                    glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_BYTE, nullptr);
+                }
+
                 model = glm::translate(glm::mat4(1.0F), lightPos);
                 model = glm::scale(model, glm::vec3(0.2F));
 
@@ -255,6 +252,7 @@ int main(int argc, char **argv) {
 
                 glBindVertexArray(lightVAO);
                 glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_BYTE, nullptr);
+
                 glfwSwapBuffers(ctx);
                 glfwPollEvents();
             }
@@ -290,8 +288,10 @@ void setCursorPos([[maybe_unused]] GLFWwindow *ctx, GLdouble Inxpos, GLdouble In
         is_first = GL_FALSE;
     }
 
-    GLfloat xoffset = lastX - xpos;
-    GLfloat yoffset = ypos - lastY;
+    // GLfloat xoffset = lastX - xpos;
+    GLfloat xoffset = xpos - lastX;
+    // GLfloat yoffset = ypos - lastY;
+    GLfloat yoffset = lastY - ypos;
 
     lastX = xpos;
     lastY = ypos;

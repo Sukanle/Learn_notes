@@ -69,7 +69,7 @@ GLfloat Camera::getPitch() const noexcept {
 
 void Camera::setPitch(GLfloat pitch) noexcept {
     _pitch = fminf(pitch, 89.0F);
-    _pitch = fmaxf(_pitch, -89.0F);
+    _pitch = fmaxf(pitch, -89.0F);
 }
 
 GLfloat Camera::getMoveSpeed() const noexcept {
@@ -94,7 +94,7 @@ GLfloat Camera::getZoom() const noexcept {
 
 void Camera::setZoom(GLfloat zoom) noexcept {
     _zoom = fmaxf(zoom, 1.0F);
-    _zoom = fminf(_zoom, 45.0F);
+    _zoom = fminf(zoom, 45.0F);
 }
 
 void Camera::keyboard(Camera::Movement direction, GLfloat deltaTime) noexcept {

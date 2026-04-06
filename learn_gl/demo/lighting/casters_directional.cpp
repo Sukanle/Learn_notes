@@ -5,7 +5,6 @@
 #import "skl/graphics/gl/texture.hpp"
 #include "skl/utils/utils.hpp"
 
-
 #include <array>
 #include <filesystem>
 #include <glm/gtc/type_ptr.hpp>
@@ -99,6 +98,19 @@ int main(int argc, char **argv) {
             std::array<uint8_t, 6>{16, 17, 18, 18, 19, 16},
             std::array<uint8_t, 6>{20, 21, 22, 22, 23, 20}
         };
+
+        std::array cubePositions = {
+            glm::vec3( 0.0F,  0.0F,  0.0F),
+            glm::vec3( 2.0F,  5.0F, -15.0F),
+            glm::vec3(-1.5F, -2.2F, -2.5F),
+            glm::vec3(-3.8F, -2.0F, -12.3F),
+            glm::vec3( 2.4F, -0.4F, -3.5F),
+            glm::vec3(-1.7F,  3.0F, -7.5F),
+            glm::vec3( 1.3F, -2.0F, -2.5F),
+            glm::vec3( 1.5F,  2.0F, -2.5F),
+            glm::vec3( 1.5F,  0.2F, -1.5F),
+            glm::vec3(-1.3F,  1.0F, -1.5F)
+        };
         // clang-format on
         // first, configure the cube's VAO (and VBO)
         uint32_t cubeVAO = 0;
@@ -110,7 +122,7 @@ int main(int argc, char **argv) {
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
 
-        constexpr GLsizei kIndexCount = (GLsizei)(indices.size() * indices[0].size());
+        constexpr auto kIndexCount = (GLsizei)(indices.size() * indices[0].size());
 
         glBindVertexArray(cubeVAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -170,7 +182,6 @@ int main(int argc, char **argv) {
         }
         {
             glEnable(GL_DEPTH_TEST);
-            glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(1.0F)));
 
             auto cpath = std::filesystem::current_path();
 
@@ -194,6 +205,7 @@ int main(int argc, char **argv) {
                 (void)fprintf(stderr, "Error: [shader] ID: %d\nmessage: %s\n", ec.value(), ec.message().c_str());
                 goto ERR_SHADER_FREE;
             }
+
             cubeShader.use();
             cubeShader.set1I("material.diffuse", diffuseMap.getUnitPos());
             if (enableSpecular) cubeShader.set1I("material.specular", specularMap.getUnitPos());
@@ -224,7 +236,6 @@ int main(int argc, char **argv) {
                     cubeShader.set3F("material.specular", 0.5F, 0.5F, 0.5F);
                 cubeShader.set1F("material.shininess", 32.0F);
                 cubeShader.set3F("viewPos", RESLOVE_3V(camera.getPosition()));
-                cubeShader.setMat3F("normalMatrix", 1, GL_FALSE, glm::value_ptr(normalMatrix));
                 cubeShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
                 cubeShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
                 cubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
@@ -244,17 +255,19 @@ int main(int argc, char **argv) {
                 }
 
                 glBindVertexArray(cubeVAO);
-                glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_BYTE, nullptr);
-                model = glm::translate(glm::mat4(1.0F), lightPos);
-                model = glm::scale(model, glm::vec3(0.2F));
+                for (unsigned int i = 0; i < 10; i++) {
+                    // calculate the model matrix for each object and pass it to shader before drawing
+                    glm::mat4 model(1.0F);
+                    model = glm::translate(model, cubePositions[i]);
+                    float angle = 20.0F * i;
+                    model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0F, 0.3F, 0.5F));
+                    cubeShader.setMat3F("normalMatrix", 1, GL_FALSE,
+                                        glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(model)))));
+                    cubeShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
 
-                lightShader.use();
-                lightShader.setMat4F("proj", 1, GL_FALSE, glm::value_ptr(proj));
-                lightShader.setMat4F("view", 1, GL_FALSE, glm::value_ptr(view));
-                lightShader.setMat4F("model", 1, GL_FALSE, glm::value_ptr(model));
+                    glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_BYTE, nullptr);
+                }
 
-                glBindVertexArray(lightVAO);
-                glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_BYTE, nullptr);
                 glfwSwapBuffers(ctx);
                 glfwPollEvents();
             }
@@ -290,8 +303,10 @@ void setCursorPos([[maybe_unused]] GLFWwindow *ctx, GLdouble Inxpos, GLdouble In
         is_first = GL_FALSE;
     }
 
-    GLfloat xoffset = lastX - xpos;
-    GLfloat yoffset = ypos - lastY;
+    // GLfloat xoffset = lastX - xpos;
+    GLfloat xoffset = xpos - lastX;
+    // GLfloat yoffset = ypos - lastY;
+    GLfloat yoffset = lastY - ypos;
 
     lastX = xpos;
     lastY = ypos;

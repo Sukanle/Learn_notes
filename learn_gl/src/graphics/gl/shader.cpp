@@ -1,5 +1,5 @@
 #define __MACRO_UNUSED__
-#include "skl/graphics/error.hpp"
+#include "skl/graphics/error_category.hpp"
 #include "skl/graphics/gl/shader.hpp"
 
 #include <errno.h>

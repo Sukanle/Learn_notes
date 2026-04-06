@@ -1,4 +1,4 @@
-#include "skl/graphics/error.hpp"
+#include "skl/graphics/error_category.hpp"
 #include "skl/graphics/gl/texture.hpp"
 
 #include <algorithm>
@@ -256,7 +256,7 @@ template Texture2D &Texture2D::set_config<GLfloat *>(GLenum pname, GLfloat *valu
 template Texture2D &Texture2D::set_config<std::array<GLint, 4>>(GLenum pname, std::array<GLint, 4> value) noexcept;
 template Texture2D &Texture2D::set_config<std::array<GLfloat, 4>>(GLenum pname, std::array<GLfloat, 4> value) noexcept;
 
-Texture2D &Texture2D::set_config(UpdateMode mode, const std::vector<TexConfig> &cfgs) noexcept {
+Texture2D &Texture2D::set_config(const std::vector<TexConfig> &cfgs, UpdateMode mode) noexcept {
     if (cfgs.empty()) return *this;
 
     switch (mode) {
@@ -271,8 +271,8 @@ Texture2D &Texture2D::set_config(UpdateMode mode, const std::vector<TexConfig> &
     return *this;
 }
 
-Texture2D &Texture2D::set_config(UpdateMode policy, std::initializer_list<TexConfig> cfgs) noexcept {
-    return set_config(policy, std::vector<TexConfig>(cfgs));
+Texture2D &Texture2D::set_config(std::initializer_list<TexConfig> cfgs, UpdateMode policy) noexcept {
+    return set_config(std::vector<TexConfig>(cfgs), policy);
 }
 
 Texture2D &Texture2D::update() noexcept {
@@ -344,7 +344,6 @@ size_t TextureUnit::acquire(std::error_code &ec, GLuint TexID, size_t pos) noexc
     return std::distance(_units.begin(), it);
 }
 
-// 释放单元
 void TextureUnit::release(std::error_code &ec, size_t pos) noexcept {
     ec.clear();
     if (pos >= _maxUnits) {
@@ -364,7 +363,7 @@ void TextureUnit::activate(std::error_code &ec, size_t pos) noexcept {
         return;
     }
 
-    if (_activePos == pos || _units[pos]) return;
+    if (_activePos == pos || !_units[pos]) return;
 
     _activePos = pos;
     glActiveTexture(GL_TEXTURE0 + _activePos);

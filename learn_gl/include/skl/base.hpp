@@ -2,6 +2,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
+#include <string.h>
+#include <string_view>
 namespace skl {
 inline size_t aligned(uint8_t aligned_size, size_t n) {
     if (n == 0) return aligned_size;                       // 至少分配一个对齐块
@@ -21,7 +24,16 @@ inline size_t aligned64(size_t n) {
     return aligned(64, n);
 }
 
-typedef int SKLErr ;
+using SKLErr = int;
+#if defined (_WIN32)
+using String = std::wstring;
+using String = std::wstring_view;
+using Char = wchar_t;
+#else
+using String = std::string;
+using String_view = std::string_view;
+using Char = char;
+#endif
 
 enum UpdateMode : uint8_t {
     merge,
