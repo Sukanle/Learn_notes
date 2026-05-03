@@ -12,8 +12,7 @@
 #include <filesystem>
 #include <vector>
 
-namespace skl {
-
+NAMESPACE_UTILS_BEGIN
 struct I18NLoader::package {
     simdjson::dom::parser parser;
     simdjson::dom::element root;
@@ -85,7 +84,8 @@ std::vector<std::filesystem::path> search_roots() {
     roots.emplace_back(std::filesystem::current_path());
 
     char exe_dir[skl::fs::SKL_PATH_MAX] = {0};
-    if (skl::fs::exedir(exe_dir, sizeof(exe_dir)) != nullptr) { roots.emplace_back(exe_dir); }
+    if (skl::fs::exedir(exe_dir, sizeof(exe_dir)) != nullptr)
+        roots.emplace_back(exe_dir);
 
     std::vector<std::filesystem::path> expanded;
     expanded.reserve(roots.size() * 8);
@@ -126,19 +126,19 @@ I18NLoader::I18NLoader(std::error_code &ec, const std::string &file_path, std::s
     ec.clear();
 
     if (file_path.empty() || !std::filesystem::exists(file_path)) {
-        ec = make_error_code(utils_ec::lang_no_such_file);
+        ec = make_error_code(errc::lang_no_such_file);
         return;
     }
 
     auto error = impl->parser.load(file_path).get(impl->root);
     if (error) {
-        ec = make_error_code((utils_ec)(error | 0x0200U));
+        ec = make_error_code((errc)(error | 0x0200U));
         return;
     }
 
     simdjson::dom::object doc;
     if (impl->root.get(doc)) {
-        ec = make_error_code(utils_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return;
     }
 
@@ -154,14 +154,14 @@ I18NLoader::I18NLoader(std::error_code &ec, const std::string &file_path, std::s
             uint32_t code = 0;
             if (!parse_hex_code(item.key, code)) continue;
 
-            const char *msg = nullptr;
-            if (item.value.get_c_str().get(msg)) continue;
-            module_index[code] = msg;
+            std::string_view msg;
+            if (item.value.get_string().get(msg)) continue;
+            module_index[code] = std::string(msg);
         }
     }
 
     if (index_map.empty()) {
-        ec = make_error_code(utils_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return;
     }
 
@@ -200,7 +200,7 @@ const I18NLoader &global_i18n_loader() noexcept {
     return loader;
 }
 
-}   // namespace skl
+NAMESPACE_UTILS_END
 
 extern "C" {
 
@@ -209,13 +209,13 @@ int skl_i18n_find_ex(const char *submodule, uint32_t code, const char **out_mess
     if (out_size) *out_size = 0;
 
     if (!submodule || !out_message) {
-        skl::set_last_i18n_error("invalid argument");
+        skl::utils::set_last_i18n_error("invalid argument");
         return -1;
     }
 
-    const auto &loader = skl::global_i18n_loader();
+    const auto &loader = skl::utils::global_i18n_loader();
     if (!loader.is_loaded()) {
-        skl::set_last_i18n_error("i18n loader not loaded");
+        skl::utils::set_last_i18n_error("i18n loader not loaded");
         return -2;
     }
 
@@ -223,23 +223,23 @@ int skl_i18n_find_ex(const char *submodule, uint32_t code, const char **out_mess
     const std::string_view message = loader.find(ec, submodule, code);
     if (ec) {
         const std::string text = ec.message();
-        skl::set_last_i18n_error(text.c_str());
+        skl::utils::set_last_i18n_error(text.c_str());
         return -3;
     }
 
     if (message.empty()) {
-        skl::set_last_i18n_error("message not found");
+        skl::utils::set_last_i18n_error("message not found");
         return 1;
     }
 
     *out_message = message.data();
     if (out_size) *out_size = message.size();
-    skl::set_last_i18n_error(nullptr);
+    skl::utils::set_last_i18n_error(nullptr);
     return 0;
 }
 
 const char *skl_i18n_last_error_message(void) {
-    return skl::g_last_i18n_error.c_str();
+    return skl::utils::g_last_i18n_error.c_str();
 }
 
 }

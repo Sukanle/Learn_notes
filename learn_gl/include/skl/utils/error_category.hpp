@@ -1,12 +1,12 @@
 #pragma once
-#include "skl/utils/errec.hpp"
-#include <stdint.h>
 
-namespace skl {
-class utils_err : public error_category {
+#include "skl/utils/errec.hpp"
+
+NAMESPACE_UTILS_BEGIN
+class error_category : public skl::error_category {
 public:
-    static const utils_err &instance() {
-        static utils_err inst;
+    static const error_category &instance() {
+        static error_category inst;
         return inst;
     }
 
@@ -19,9 +19,10 @@ public:
     [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override;
 
 private:
-    utils_err() = default;
+    error_category() = default;
 };
+NAMESPACE_UTILS_END
 
-std::error_code make_error_code(utils_ec ec);
-
-}   // namespace skl
+NAMESPACE_SKL_BEGIN
+std::error_code make_error_code(utils::errc ec);
+NAMESPACE_SKL_END

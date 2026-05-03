@@ -1,6 +1,6 @@
 #include "skl/graphics/gl/camera.hpp"
 
-namespace skl::opengl {
+NAMESPACE_OPENGL_BEGIN
 void Camera::updateCameraVectors() noexcept {
     glm::vec3 front;
     front.x = cosf(glm::radians(_yaw)) * cosf(glm::radians(_pitch));
@@ -134,4 +134,4 @@ glm::mat4 Camera::getView() noexcept {
 void Camera::update() noexcept {
     updateCameraVectors();
 }
-}   // namespace skl::opengl
+NAMESPACE_OPENGL_END

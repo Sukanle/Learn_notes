@@ -58,7 +58,8 @@ void print_case(const char *title, const std::error_code &ec) {
     printf("%s\n", title);
     printf("  category: %s\n", ec.category().name());
     printf("  value   : 0x%X\n", ec.value());
-    printf("  message : %s\n\n", ec.message().c_str());
+    auto errstr = ec.message();
+    printf("  message : %s\n\n", errstr.c_str());
 }
 
 void print_usage(const char *argv0) {
@@ -109,7 +110,7 @@ int main(int argc, char **argv) {
     printf("[I18N Demo - Dynamic Load] lang library path = %s\n", lib_path.c_str());
 
     std::error_code ec;
-    skl::DynLib lib;
+    skl::utils::DynLib lib;
     lib.open(lib_path.c_str(), ec);
     if (ec) {
         printf("open dynamic library failed: %s\n", ec.message().c_str());
@@ -126,11 +127,10 @@ int main(int argc, char **argv) {
     size_t message_size = 0;
     const int rc = api.find_ex("utils", 0x0016U, &message, &message_size);
     printf("find_ex(submodule=utils, code=0x0016) rc=%d\n", rc);
-    if (rc == 0 && message) {
-        // printf("message: %.*s\n", static_cast<int>(message_size), message);
-    } else if (api.last_error) {
+    if (rc == 0 && message)
+        printf("message: %.*s\n", static_cast<int>(message_size), message);
+    else if (api.last_error)
         printf("last_error: %s\n", api.last_error());
-    }
 
     return 0;
 #else
@@ -140,19 +140,19 @@ int main(int argc, char **argv) {
     puts("- Missing language pack/submodule  -> fallback hardcoded English\n");
 
     // utils errors
-    print_case("[utils] invalid_argument", skl::make_error_code(skl::utils_ec::invalid_argument));
-    print_case("[utils] json_utf8_error", skl::make_error_code(skl::utils_ec::json_utf8_error));
-    print_case("[utils] unknown", skl::make_error_code(skl::utils_ec::unknown));
+    print_case("[utils] invalid_argument", skl::make_error_code(skl::utils::errc::invalid_argument));
+    print_case("[utils] json_utf8_error", skl::make_error_code(skl::utils::errc::json_utf8_error));
+    print_case("[utils] unknown", skl::make_error_code(skl::utils::errc::unknown));
 
     // graphics errors
-    print_case("[graphics] shader_compile_failed", skl::make_error_code(skl::graphics_ec::shader_compile_failed));
-    print_case("[graphics] texture_unit_mismatch", skl::make_error_code(skl::graphics_ec::texture_unit_mismatch));
-    print_case("[graphics] unknown", skl::make_error_code(skl::graphics_ec::unknown));
+    print_case("[graphics] shader_compile_failed", skl::make_error_code(skl::graphics::errc::shader_compile_failed));
+    print_case("[graphics] texture_unit_mismatch", skl::make_error_code(skl::graphics::errc::texture_unit_mismatch));
+    print_case("[graphics] unknown", skl::make_error_code(skl::graphics::errc::unknown));
 
     // unknown code should always use fallback path
-    std::error_code invalid_graphics{0x0BAD, skl::graphics_err::instance()};
+    std::error_code invalid_graphics{0x0BAD, skl::graphics::error_category::instance()};
     print_case("[graphics] invalid_error 0x0BAD", invalid_graphics);
-    std::error_code invalid_utils{0xFBAD, skl::utils_err::instance()};
+    std::error_code invalid_utils{0xFBAD, skl::utils::error_category::instance()};
     print_case("[utils] invalid_error 0xFBAD", invalid_utils);
 
     return 0;

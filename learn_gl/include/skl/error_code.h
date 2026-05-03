@@ -1,4 +1,5 @@
 #pragma once
+#import "skl/config.h"
 #include <system_error>
 
 #define SKL_STDERR_FALLBACK {ev, *this}
@@ -8,7 +9,7 @@
 #define SKL_ERR_X_MAP(name, msg, val, map) \
     case SKL_ERR_ENUM::name: return map;
 
-namespace skl {
+NAMESPACE_SKL_BEGIN
 class error_category : public std::error_category {
 public:
     virtual ~error_category() = default;
@@ -21,4 +22,4 @@ public:
 protected:
     error_category() = default;
 };
-}   // namespace skl
+NAMESPACE_SKL_END

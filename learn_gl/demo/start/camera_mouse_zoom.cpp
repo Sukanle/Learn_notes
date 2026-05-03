@@ -2,7 +2,7 @@
 
 #include "skl/graphics/gl/shader.hpp"
 #include "skl/graphics/gl/texture.hpp"
-#include "skl/utils/utils.hpp"
+#include "skl/utils/base.hpp"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -104,12 +104,12 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(0));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::utils::BufferOffset<GLfloat>(0));
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(3));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::utils::BufferOffset<GLfloat>(3));
     glEnableVertexAttribArray(1);
 
-    namespace gl = skl::opengl;
+    namespace gl = skl::graphics::opengl;
     std::array<gl::texture_t, 2> textures;
     std::string cpath(std::filesystem::current_path().string());
     textures[0].path = cpath + "/resources/textures/container.jpg";

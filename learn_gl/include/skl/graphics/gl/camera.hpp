@@ -5,7 +5,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace skl::opengl {
+#include "skl/graphics/gl/base.hpp"
+
+NAMESPACE_OPENGL_BEGIN
 constexpr GLfloat YAW = -90.0F;
 constexpr GLfloat PITCH = 0.0F;
 constexpr GLfloat SPEED = 2.5F;
@@ -35,15 +37,16 @@ public:
 
     Camera(glm::vec3 position = glm::vec3(0.0F, 0.0F, 0.0F), glm::vec3 worldup = glm::vec3(0.0F, 1.0F, 0.0F),
            GLfloat yaw = YAW, GLfloat pitch = PITCH) noexcept;
-    Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw, GLfloat pitch) noexcept;
+    Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw,
+           GLfloat pitch) noexcept;
     ~Camera() noexcept = default;
 
-    [[nodiscard]] const glm::vec3& getPosition() const noexcept;
-    void setPosition(const glm::vec3& position) noexcept;
+    [[nodiscard]] const glm::vec3 &getPosition() const noexcept;
+    void setPosition(const glm::vec3 &position) noexcept;
 
-    [[nodiscard]] const glm::vec3& getFront() const noexcept;
-    [[nodiscard]] const glm::vec3& getUp() const noexcept;
-    [[nodiscard]] const glm::vec3& getRight() const noexcept;
+    [[nodiscard]] const glm::vec3 &getFront() const noexcept;
+    [[nodiscard]] const glm::vec3 &getUp() const noexcept;
+    [[nodiscard]] const glm::vec3 &getRight() const noexcept;
 
     [[nodiscard]] GLfloat getYaw() const noexcept;
     void setYaw(GLfloat yaw) noexcept;
@@ -66,4 +69,4 @@ public:
     void mouseScroll(GLfloat yoffset) noexcept;
     void update() noexcept;
 };
-}   // namespace skl::opengl
+NAMESPACE_OPENGL_END

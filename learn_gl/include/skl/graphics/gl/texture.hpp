@@ -1,16 +1,17 @@
 #pragma once
 
-#include <glad/glad.h>
-#include "skl/base.hpp"
 #include <array>
+#include <filesystem>
+#include <stdint.h>
 #include <string>
 #include <vector>
-#define STB_IMAGE_IMPLEMENTATION
-#include <filesystem>
-#include <stb_image.h>
 
-namespace skl::opengl {
-// using TexParam = std::variant<GLint, GLfloat, GLint[4], GLfloat[4]>;
+#include <glad/glad.h>
+
+#include "skl/graphics/gl/base.hpp"
+#include "skl/graphics/texture.hpp"
+
+NAMESPACE_OPENGL_BEGIN
 struct TexParam {
 public:
     enum Tparam : uint8_t { I1, F1, I4, F4 };
@@ -25,8 +26,8 @@ public:
     union {
         GLint i;
         GLfloat f;
-        GLint iv[4];
-        GLfloat fv[4];
+        std::array<GLint, 4> iv;
+        std::array<GLfloat, 4> fv;
     } data;
     Tparam type;
 
@@ -43,6 +44,7 @@ struct texture_t {
     GLenum intformat = GL_FALSE;
     GLvoid *data = nullptr;
     std::string path;
+    std::string name;
 
     texture_t() = default;
     explicit texture_t(std::string_view texpath, GLenum intformat, GLenum type, GLint mipLevels) noexcept;
@@ -57,15 +59,15 @@ struct TexConfig {
     constexpr bool operator!=(const TexConfig &other) const noexcept;
 };
 
-class Texture2D {
+class Texture2D : public ITexture2D, IOpenGLAPI {
 private:
-    texture_t _tex;
-    std::vector<TexConfig> _cfgs;
-    static GLuint _bind_id;
-    bool _dirty;
-    size_t _unitPos;
-    void apply(GLenum pname, const TexParam &param) const noexcept;
-    void apply(TexConfig &cfg) const noexcept {
+        texture_t _tex;
+        std::vector<TexConfig> _cfgs;
+        static GLuint _bind_id;
+        bool _dirty;
+        size_t _unitPos;
+    static void apply(GLenum pname, const TexParam &param) noexcept;
+    static void apply(TexConfig &cfg) noexcept {
         apply(cfg.pname, cfg.param);
         cfg.dirty = false;
     }
@@ -74,21 +76,30 @@ public:
     Texture2D() noexcept;
     explicit Texture2D(const std::filesystem::path &tex, GLenum intformat = GL_FALSE, GLenum type = GL_UNSIGNED_BYTE,
                        GLint mipLevels = 1) noexcept;
-    ~Texture2D() noexcept;
+    ~Texture2D() noexcept override;
+
+    SKL_DELETE_COPYABLE(Texture2D);
+    Texture2D(Texture2D &&) noexcept;
+    Texture2D &operator=(Texture2D &&) noexcept;
 
     static GLint getGLformat(int channels) noexcept;
-    static void setflipY(bool flip) noexcept { stbi_set_flip_vertically_on_load(flip); }
 
-    [[nodiscard]] auto getUnitPos() const noexcept -> decltype(_unitPos) { return _unitPos; }
+    [[nodiscard]] auto getUnitPos() const noexcept -> size_t { return _unitPos; }
     [[nodiscard]] auto getTex() const noexcept -> const decltype(_tex) & { return _tex; }
     [[nodiscard]] auto getCfgs() const noexcept -> const decltype(_cfgs) & { return _cfgs; }
-    Texture2D &bind() noexcept;
+    [[nodiscard]] auto getKey() const noexcept -> decltype(_tex.ID) { return _tex.ID; }
+    Texture2D &bind() noexcept override;
     Texture2D &load(std::error_code &ec, const std::filesystem::path &tex, GLint intformat = GL_FALSE,
                     GLenum type = GL_UNSIGNED_BYTE, GLenum mipLevels = 1) noexcept;
+
+    Texture2D &set_texName(std::string_view name) noexcept {
+        _tex.name = name;
+        return *this;
+    }
     template<typename T>
     Texture2D &set_config(GLenum pname, T value) noexcept;
-    Texture2D &set_config(const std::vector<TexConfig> &cfgs, UpdateMode policy = UpdateMode::replace) noexcept;
-    Texture2D &set_config(std::initializer_list<TexConfig> cfgs, UpdateMode policy = UpdateMode::replace) noexcept;
+    Texture2D &set_config(const std::vector<TexConfig> &cfgs, UpdateMode policy = UpdateMode::append) noexcept;
+    Texture2D &set_config(std::initializer_list<TexConfig> cfgs, UpdateMode policy = UpdateMode::append) noexcept;
     Texture2D &update() noexcept;
     Texture2D &acquire(std::error_code &ec, size_t pos = SIZE_T_MAX) noexcept;
     Texture2D &release(std::error_code &ec) noexcept;
@@ -109,4 +120,4 @@ private:
     std::vector<GLuint> _units;
     TextureUnit() noexcept;
 };
-}   // namespace skl::opengl
+NAMESPACE_OPENGL_END

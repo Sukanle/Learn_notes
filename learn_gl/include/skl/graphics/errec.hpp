@@ -1,8 +1,9 @@
 #pragma once
-#include "skl/error_code.h"
-#include <stdint.h>
-namespace skl {
-enum class graphics_ec : uint16_t {
+#import "skl/error_code.h"
+#import "skl/graphics/base.hpp"
+
+NAMESPACE_GRAPHICS_BEGIN
+enum class errc : uint16_t {
 #define SKL_GRAPHICS_ERROR_CODES(X)                                                                                \
     /* === Common (0x0001-0x00FF) === */                                                                           \
     X(invalid_argument, "Graphics Invalid argument", 0x0016, std::errc::invalid_argument)                          \
@@ -71,8 +72,11 @@ enum class graphics_ec : uint16_t {
     /* === Driver (0x0901-0x09FF) === */                                                                           \
     X(driver_internal_error, "Driver internal error", 0x0901, SKL_STDERR_FALLBACK)                                 \
     X(driver_version_unsupported, "Driver version too old", 0x0902, std::errc::not_supported)                      \
-    X(platform_extension_unsupported, "Required extension not supported", 0x0903, std::errc::not_supported)
+    X(platform_extension_unsupported, "Required extension not supported", 0x0903, std::errc::not_supported) \
+\
+    /* === Model (0x0A01-0x0AFF) === */ \
+    X(model_load_failed, "Model load failed", 0xA01, std::errc::no_such_file_or_directory) \
 
     SKL_GRAPHICS_ERROR_CODES(SKL_ERR_X_ENUM)
 };
-}   // namespace skl
+NAMESPACE_GRAPHICS_END

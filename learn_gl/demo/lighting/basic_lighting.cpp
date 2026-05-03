@@ -2,7 +2,7 @@
 
 #include "skl/graphics/gl/camera.hpp"
 #include "skl/graphics/gl/shader.hpp"
-#include "skl/utils/utils.hpp"
+#include "skl/utils/base.hpp"
 
 #include <string.h>
 
@@ -15,7 +15,7 @@
         (void)fprintf(stderr, __VA_ARGS__); \
         goto ERR_CTX_FREE;                  \
     }
-namespace gl = skl::opengl;
+namespace gl = skl::graphics::opengl;
 
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
@@ -134,9 +134,9 @@ int main(int argc, char *argv[]) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, skl::BufferOffset<GLfloat>(0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, skl::utils::BufferOffset<GLfloat>(0));
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, skl::BufferOffset<GLfloat>(3));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, skl::utils::BufferOffset<GLfloat>(3));
         glEnableVertexAttribArray(1);
 
         glBindVertexArray(lightCubeVAO);
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, skl::BufferOffset<GLfloat>(0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, skl::utils::BufferOffset<GLfloat>(0));
         glEnableVertexAttribArray(0);
 
         {

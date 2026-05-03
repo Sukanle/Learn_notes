@@ -1,7 +1,7 @@
 // Deps: {{type = "share", name = "skl-gl", cache = true, priority = 1, deps = null}}
 #include "skl/graphics/gl/shader.hpp"
 #include "skl/graphics/gl/texture.hpp"
-#include "skl/utils/utils.hpp"
+#include "skl/utils/base.hpp"
 
 #include <filesystem>
 
@@ -11,7 +11,7 @@
 
 constexpr const GLsizei WIDTH = 800;
 constexpr const GLsizei HEIGHT = 600;
-namespace gl = skl::opengl;
+namespace gl = skl::graphics::opengl;
 
 GLfloat mixValue = 0.2F;
 
@@ -82,9 +82,9 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(0));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::utils::BufferOffset<GLfloat>(0));
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::BufferOffset<GLfloat>(3));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, skl::utils::BufferOffset<GLfloat>(3));
     glEnableVertexAttribArray(1);
 
     std::string cpath(std::filesystem::current_path().string());

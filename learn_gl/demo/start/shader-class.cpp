@@ -22,7 +22,7 @@ void processInput(GLFWwindow *window) {
         return 1;                           \
     }
 
-namespace gl = skl::opengl;
+namespace gl = skl::graphics::opengl;
 
 int main() {
     glfwInit();

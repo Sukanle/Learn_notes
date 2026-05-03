@@ -1,10 +1,8 @@
-#define __MACRO_UNUSED__
+#define SKL_MACRO_UNUSED
 #include "skl/graphics/error_category.hpp"
 #include "skl/graphics/gl/shader.hpp"
 
-#include <errno.h>
-
-namespace skl::opengl {
+NAMESPACE_OPENGL_BEGIN
 static char srcbuff[Shader::SRC_BUFF_SIZE];
 /**
  * 获取文件大小（跨平台）
@@ -80,10 +78,10 @@ SKLErr Shader::checkCompile(unsigned int shader, GLenum type) noexcept {
     int success = 0;
     if (type == GL_FALSE) {
         glGetProgramiv(shader, GL_LINK_STATUS, &success);
-        if (!success) return (SKLErr)graphics_ec::shader_link_failed;
+        if (!success) return (SKLErr)errc::shader_link_failed;
     } else {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success) return (SKLErr)graphics_ec::shader_compile_failed;
+        if (!success) return (SKLErr)errc::shader_compile_failed;
     }
 
     return EXIT_SUCCESS;
@@ -94,7 +92,7 @@ SKLErr Shader::BuildShader(FILE *fp, GLenum type, GLuint &shader) noexcept {
     char *src = nullptr;
     size_t src_size = 0;
     GLboolean isStatic = GL_FALSE;
-    if (ReadFileToBuffer(fp, &src, &src_size, &isStatic)) { return (SKLErr)graphics_ec::shader_source_load_failed; }
+    if (ReadFileToBuffer(fp, &src, &src_size, &isStatic)) { return (SKLErr)errc::shader_source_load_failed; }
     shader = glCreateShader(type);
     GLint src_length = (GLint)src_size;
     glShaderSource(shader, 1, &src, &src_length);
@@ -113,16 +111,16 @@ Shader &Shader::build(std::error_code &ec, const std::filesystem::path &vertexPa
     ec.clear();
 
     if (vertexPath.empty() || fragmentPath.empty()) {
-        ec = make_error_code(graphics_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return *this;
     }
 
     bool Exist = std::filesystem::exists(vertexPath, ec);
-    if(ec || !std::filesystem::is_regular_file(vertexPath, ec)) return *this;
+    if (ec || !std::filesystem::is_regular_file(vertexPath, ec)) return *this;
     Exist &= std::filesystem::exists(fragmentPath, ec);
-    if(ec || !std::filesystem::is_regular_file(fragmentPath, ec)) return *this;
-    if (!Exist){
-        ec = make_error_code(graphics_ec::shader_source_load_failed);
+    if (ec || !std::filesystem::is_regular_file(fragmentPath, ec)) return *this;
+    if (!Exist) {
+        ec = make_error_code(errc::shader_source_load_failed);
         return *this;
     }
 
@@ -135,22 +133,22 @@ Shader &Shader::build(std::error_code &ec, const char *vertexPath, const char *f
     if (!vertexSrc || !fragmentSrc) {
         if (vertexSrc) fclose(vertexSrc);
         if (fragmentSrc) fclose(fragmentSrc);
-        ec = make_error_code(graphics_ec::shader_source_load_failed);
+        ec = make_error_code(errc::shader_source_load_failed);
         return *this;
     }
 
     GLuint vertex = 0;
     GLuint fragment = 0;
-    ec = make_error_code((graphics_ec)BuildShader(vertexSrc, GL_VERTEX_SHADER, vertex));
+    ec = make_error_code((errc)BuildShader(vertexSrc, GL_VERTEX_SHADER, vertex));
     if (ec) goto CLEANUP;
-    ec = make_error_code((graphics_ec)BuildShader(fragmentSrc, GL_FRAGMENT_SHADER, fragment));
+    ec = make_error_code((errc)BuildShader(fragmentSrc, GL_FRAGMENT_SHADER, fragment));
     if (ec) goto CLEANUP;
 
     _ID = glCreateProgram();
     glAttachShader(_ID, vertex);
     glAttachShader(_ID, fragment);
     glLinkProgram(_ID);
-    ec = make_error_code((graphics_ec)checkCompile(_ID, GL_FALSE));
+    ec = make_error_code((errc)checkCompile(_ID, GL_FALSE));
     if (ec) {
         glDeleteProgram(_ID);
         _ID = 0;
@@ -164,7 +162,7 @@ CLEANUP:
     fclose(vertexSrc);
     return *this;
 }
-Shader::~Shader() noexcept{
+Shader::~Shader() noexcept {
     if (_ID) glDeleteProgram(_ID);
 }
-}   // namespace skl::opengl
+NAMESPACE_OPENGL_END

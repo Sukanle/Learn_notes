@@ -1,6 +1,6 @@
 #include "skl/fs.hpp"
 
-namespace skl::fs {
+NAMESPACE_FILESYSTEM_BEGIN
 char* exepath(char* buffer, size_t buffer_size, const char* filename) noexcept{
     if (!buffer || buffer_size == 0) { return NULL; }
 
@@ -99,4 +99,4 @@ char* exepath(char* buffer, size_t buffer_size, const char* filename) noexcept{
 char* exedir(char* buffer, size_t buffer_size) noexcept{
     return exepath(buffer, buffer_size, "");
 }
-}   // namespace skl::fs
+NAMESPACE_FILESYSTEM_END

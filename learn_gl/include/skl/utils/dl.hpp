@@ -1,10 +1,10 @@
 #pragma once
-#include <stdlib.h>
 #include <system_error>
 
-#include "skl/base.hpp"
+#include "skl/utils/base.hpp"
 
-namespace skl {
+NAMESPACE_UTILS_BEGIN
+
 class DynLib {
 public:
     using dyn_t = void;
@@ -48,4 +48,4 @@ private:
     static void close(dyn_t *handle) noexcept;
 };
 
-}   // namespace skl
+NAMESPACE_UTILS_END

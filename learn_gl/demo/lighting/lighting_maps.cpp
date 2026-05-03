@@ -3,7 +3,7 @@
 #import "skl/graphics/gl/camera.hpp"
 #import "skl/graphics/gl/shader.hpp"
 #import "skl/graphics/gl/texture.hpp"
-#include "skl/utils/utils.hpp"
+#include "skl/utils/base.hpp"
 
 
 #include <array>
@@ -16,7 +16,7 @@
         goto ERR_CTX_FREE;                  \
     }
 
-namespace gl = skl::opengl;
+namespace gl = skl::graphics::opengl;
 
 void setFramebufferSize(GLFWwindow *ctx, GLsizei width, GLsizei height) noexcept;
 void setCursorPos(GLFWwindow *ctx, GLdouble xpos, GLdouble ypos);
@@ -118,21 +118,21 @@ int main(int argc, char **argv) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::BufferOffset<GLfloat>(0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::utils::BufferOffset<GLfloat>(0));
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::BufferOffset<GLfloat>(3));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::utils::BufferOffset<GLfloat>(3));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::BufferOffset<GLfloat>(6));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::utils::BufferOffset<GLfloat>(6));
         glEnableVertexAttribArray(2);
 
         glBindVertexArray(lightVAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::BufferOffset<GLfloat>(0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), skl::utils::BufferOffset<GLfloat>(0));
         glEnableVertexAttribArray(0);
 
         auto cpath = std::filesystem::current_path();
-        gl::Texture2D::setflipY(true);
+        gl::Texture2D::setFlipY(true);
         gl::Texture2D diffuseMap;
         auto texPath = cpath / "resources" / "textures" / "container2.png";
         std::error_code ec;

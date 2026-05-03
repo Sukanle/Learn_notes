@@ -1,11 +1,7 @@
 #include "skl/graphics/error_category.hpp"
 #include "skl/graphics/gl/texture.hpp"
 
-#include <algorithm>
-
-namespace skl::opengl {
-using std::string_view;
-
+NAMESPACE_OPENGL_BEGIN
 namespace {
 auto find_cfg_by_pname(std::vector<TexConfig> &cfgs, GLenum pname) noexcept {
     return std::ranges::find_if(cfgs, [pname](const TexConfig &cfg) { return cfg.pname == pname; });
@@ -82,10 +78,10 @@ inline constexpr auto is_std_array_v = is_std_array<T>::value;
 void TexParam::set(Tparam tname, const void *dataIn) noexcept {
     type = tname;
     switch (tname) {
-        case I1: data.i = *(int *)dataIn; return;
-        case F1: data.f = *(float *)dataIn; return;
-        case I4: memcpy(data.iv, dataIn, sizeof(GLint) * 4); return;
-        case F4: memcpy(data.fv, dataIn, sizeof(GLfloat) * 4); return;
+        case I1: data.i = *static_cast<const GLint *>(dataIn); return;
+        case F1: data.f = *static_cast<const GLfloat *>(dataIn); return;
+        case I4: memcpy(data.iv.data(), dataIn, sizeof(GLint) * 4); return;
+        case F4: memcpy(data.fv.data(), dataIn, sizeof(GLfloat) * 4); return;
     }
 }
 
@@ -120,21 +116,14 @@ constexpr bool TexParam::operator==(const TexParam &other) const noexcept {
     switch (type) {
         case I1: return data.i == other.data.i;
         case F1: return data.f == other.data.f;
-        case I4: return !memcmp(data.iv, other.data.iv, 4 * sizeof(GLint));
-        case F4: return !memcmp(data.fv, other.data.fv, 4 * sizeof(GLfloat));
+        case I4: return data.iv == other.data.iv;
+        case F4: return data.fv == other.data.fv;
     }
     return false;
 }
 
 constexpr bool TexParam::operator!=(const TexParam &other) const noexcept {
-    if (type != other.type) return false;
-    switch (type) {
-        case I1: return data.i == other.data.i;
-        case F1: return data.f == other.data.f;
-        case I4: return memcmp(data.iv, other.data.iv, 4 * sizeof(GLint));
-        case F4: return memcmp(data.fv, other.data.fv, 4 * sizeof(GLfloat));
-    }
-    return false;
+    return !(*this == other);
 }
 
 constexpr bool TexConfig::operator==(const TexConfig &other) const noexcept {
@@ -149,6 +138,23 @@ Texture2D::Texture2D() noexcept
     , _unitPos(SIZE_T_MAX) {
     glGenTextures(1, &_tex.ID);
 }
+Texture2D::Texture2D(Texture2D&& other) noexcept : _dirty(other._dirty), _unitPos(other._unitPos) {
+    _tex = std::exchange(other._tex, {});
+    _cfgs = std::exchange(other._cfgs, {});
+    other._dirty = false;
+    other._unitPos = SIZE_T_MAX;
+}
+Texture2D& Texture2D::operator=(Texture2D&& other) noexcept {
+    _tex = std::exchange(other._tex, {});
+    _cfgs = std::exchange(other._cfgs, {});
+
+    _dirty = other._dirty;
+    other._dirty = false;
+    _unitPos = other._unitPos;
+    other._unitPos = SIZE_T_MAX;
+    return *this;
+}
+
 GLint Texture2D::getGLformat(int channels) noexcept {
     switch (channels) {
         case 1:  return GL_RED;
@@ -173,13 +179,13 @@ Texture2D::~Texture2D() noexcept {
     if (_bind_id == _tex.ID) _bind_id = 0;
 }
 
-void Texture2D::apply(GLenum pname, const TexParam &param) const noexcept {
+void Texture2D::apply(GLenum pname, const TexParam &param) noexcept {
     // 边框颜色特殊处理
     if (pname == GL_TEXTURE_BORDER_COLOR) {
         if (param.type == TexParam::I4)
-            glTexParameterIiv(GL_TEXTURE_2D, pname, param.data.iv);
+            glTexParameterIiv(GL_TEXTURE_2D, pname, param.data.iv.data());
         else
-            glTexParameterfv(GL_TEXTURE_2D, pname, param.data.fv);
+            glTexParameterfv(GL_TEXTURE_2D, pname, param.data.fv.data());
     }
     // 标准参数
     else {
@@ -191,7 +197,7 @@ void Texture2D::apply(GLenum pname, const TexParam &param) const noexcept {
 }
 template<typename T>
 Texture2D &Texture2D::set_config(GLenum pname, T value) noexcept {
-    TexConfig cfg;
+    TexConfig cfg{};
     cfg.pname = pname;
     cfg.param.set(value);
     _cfgs.emplace_back(cfg);
@@ -219,11 +225,11 @@ Texture2D &Texture2D::load(std::error_code &ec, const std::filesystem::path &tex
         _tex.data = stbi_loadf(_tex.path.c_str(), &_tex.width, &_tex.height, &_tex.nrChannels, 0);
 
     else {
-        ec = make_error_code(graphics_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return *this;
     }
     if (!_tex.data) {
-        ec = make_error_code(graphics_ec::texture_creation_failed);
+        ec = make_error_code(errc::texture_creation_failed);
         return *this;
     }
 
@@ -256,10 +262,10 @@ template Texture2D &Texture2D::set_config<GLfloat *>(GLenum pname, GLfloat *valu
 template Texture2D &Texture2D::set_config<std::array<GLint, 4>>(GLenum pname, std::array<GLint, 4> value) noexcept;
 template Texture2D &Texture2D::set_config<std::array<GLfloat, 4>>(GLenum pname, std::array<GLfloat, 4> value) noexcept;
 
-Texture2D &Texture2D::set_config(const std::vector<TexConfig> &cfgs, UpdateMode mode) noexcept {
+Texture2D &Texture2D::set_config(const std::vector<TexConfig> &cfgs, UpdateMode policy) noexcept {
     if (cfgs.empty()) return *this;
 
-    switch (mode) {
+    switch (policy) {
         case UpdateMode::replace: replace_cfgs(_cfgs, cfgs); break;
         case UpdateMode::merge:   merge_cfgs(_cfgs, cfgs, _dirty); break;
         case UpdateMode::append:  append_cfgs(_cfgs, cfgs); break;
@@ -326,9 +332,9 @@ size_t TextureUnit::acquire(std::error_code &ec, GLuint TexID, size_t pos) noexc
 
     if (pos != SIZE_T_MAX) {
         if (pos >= _maxUnits)
-            ec = make_error_code(graphics_ec::invalid_argument);
+            ec = make_error_code(errc::invalid_argument);
         else if (_units[pos] != TexID || _units[pos] != 0)
-            ec = make_error_code(graphics_ec::texture_unit_mismatch);
+            ec = make_error_code(errc::texture_unit_mismatch);
         else
             _units[pos] = TexID;
         return pos;
@@ -336,7 +342,7 @@ size_t TextureUnit::acquire(std::error_code &ec, GLuint TexID, size_t pos) noexc
 
     auto it = std::ranges::find(_units, 0);
     if (it == _units.end()) {
-        ec = make_error_code(graphics_ec::texture_unit_exhausted);
+        ec = make_error_code(errc::texture_unit_exhausted);
         return -1;
     }
     *it = TexID;
@@ -347,7 +353,7 @@ size_t TextureUnit::acquire(std::error_code &ec, GLuint TexID, size_t pos) noexc
 void TextureUnit::release(std::error_code &ec, size_t pos) noexcept {
     ec.clear();
     if (pos >= _maxUnits) {
-        ec = make_error_code(graphics_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return;
     }
 
@@ -359,7 +365,7 @@ void TextureUnit::activate(std::error_code &ec, size_t pos) noexcept {
     ec.clear();
 
     if (pos >= _maxUnits) {
-        ec = make_error_code(graphics_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return;
     }
 
@@ -373,10 +379,9 @@ void TextureUnit::activate(std::error_code &ec, size_t pos) noexcept {
 bool TextureUnit::check(std::error_code &ec, size_t TexID, size_t pos) const noexcept {
     ec.clear();
     if (pos >= _maxUnits) {
-        ec = make_error_code(graphics_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return false;
     }
     return _units[pos] == TexID;
 }
-
-}   // namespace skl::opengl
+NAMESPACE_OPENGL_END

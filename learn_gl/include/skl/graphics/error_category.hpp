@@ -1,11 +1,11 @@
 #pragma once
 #include "skl/graphics/errec.hpp"
 
-namespace skl {
-class graphics_err : public error_category {
+NAMESPACE_GRAPHICS_BEGIN
+class error_category : public skl::error_category {
 public:
-    static const graphics_err &instance() {
-        static graphics_err inst;
+    static const error_category &instance() {
+        static error_category inst;
         return inst;
     }
 
@@ -18,9 +18,10 @@ public:
     [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override;
 
 private:
-    graphics_err() = default;
+    error_category() = default;
 };
+NAMESPACE_GRAPHICS_END
 
-std::error_code make_error_code(graphics_ec ec);
-
-}   // namespace skl
+NAMESPACE_SKL_BEGIN
+std::error_code make_error_code(graphics::errc ec);
+NAMESPACE_SKL_END

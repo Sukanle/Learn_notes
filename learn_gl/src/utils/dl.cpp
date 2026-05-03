@@ -27,10 +27,10 @@ inline void DLerror() noexcept{
 #endif
 }
 }
-namespace skl {
 
+NAMESPACE_UTILS_BEGIN
 SKLErr DynLib::open(const skl::Char *path, dyn_t **out_handle) noexcept {
-    if (!path || !out_handle) { return (SKLErr)utils_ec::invalid_argument; }
+    if (!path || !out_handle) { return (SKLErr)errc::invalid_argument; }
     if (out_handle) *out_handle = nullptr;
 
     auto *h = DLOpen(path, RTLD_NOW | RTLD_LOCAL);
@@ -39,14 +39,14 @@ SKLErr DynLib::open(const skl::Char *path, dyn_t **out_handle) noexcept {
 #if defined(DEBUG) || defined (__DEBUG__) || defined(_DEBUG)
         DLerror();
 #endif
-        return (SKLErr)utils_ec::dl_open_failed; 
+        return (SKLErr)errc::dl_open_failed; 
     }
     *out_handle = h;
     return EXIT_SUCCESS;
 }
 
 SKLErr DynLib::symbol(dyn_t *handle, const skl::Char *symbol, dynfn_t *out_symbol) noexcept {
-    if (!handle || !symbol || !out_symbol) { return (SKLErr)utils_ec::invalid_argument; }
+    if (!handle || !symbol || !out_symbol) { return (SKLErr)errc::invalid_argument; }
     *out_symbol = nullptr;
 
 #if defined(_WIN32)
@@ -59,7 +59,7 @@ SKLErr DynLib::symbol(dyn_t *handle, const skl::Char *symbol, dynfn_t *out_symbo
 #if defined(DEBUG) || defined (__DEBUG__) || defined(_DEBUG)
         DLerror();
 #endif
-        return (SKLErr)utils_ec::dl_symbol_not_found; 
+        return (SKLErr)errc::dl_symbol_not_found; 
     }
     *out_symbol = (dynfn_t)p;
     return EXIT_SUCCESS;
@@ -75,7 +75,7 @@ void DynLib::open(skl::String_view path, std::error_code &ec) noexcept {
     ec.clear();
 
     if (path.empty()) {
-        ec = make_error_code(utils_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return;
     }
 
@@ -83,7 +83,7 @@ void DynLib::open(skl::String_view path, std::error_code &ec) noexcept {
     dyn_t *h = nullptr;
     const SKLErr rc = open(path_str.c_str(), &h);
     if (rc != EXIT_SUCCESS) {
-        ec = make_error_code((utils_ec)rc);
+        ec = make_error_code((errc)rc);
         return;
     }
 
@@ -100,17 +100,17 @@ DynLib::dynfn_t DynLib::symbol(const skl::Char *name, std::error_code &ec) const
     ec.clear();
 
     if (!_handle || !name) {
-        ec = make_error_code(utils_ec::invalid_argument);
+        ec = make_error_code(errc::invalid_argument);
         return nullptr;
     }
 
     dynfn_t pfn = nullptr;
     const SKLErr rc = symbol(_handle, name, &pfn);
     if (rc != EXIT_SUCCESS) {
-        ec = make_error_code((utils_ec)rc);
+        ec = make_error_code((errc)rc);
         return nullptr;
     }
     return pfn;
 }
 
-}   // namespace skl
+NAMESPACE_UTILS_END

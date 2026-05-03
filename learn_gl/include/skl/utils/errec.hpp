@@ -1,9 +1,10 @@
 #pragma once
-#include "skl/error_code.h"
 #include <stdint.h>
+#include "skl/utils/base.hpp"
+#include "skl/error_code.h"
 
-namespace skl {
-enum class utils_ec : uint16_t {
+NAMESPACE_UTILS_BEGIN
+enum class errc : uint16_t {
 
 #define SKL_UTILS_ERROR_CODES(X)                                                                                      \
     /* === Common / Standard Error (0x0001-0x00FF) === */                                                             \
@@ -14,9 +15,10 @@ enum class utils_ec : uint16_t {
     X(lang_no_such_file, "The language package file does not exist.", 0x0101, std::errc::no_such_file_or_directory)   \
                                                                                                                       \
     /* === Dynamic library error (0x0301-0x03FF) === */                                                               \
-    X(dl_open_failed, "Failed to open dynamic library.", 0x0301, std::errc::no_such_file_or_directory)               \
-    X(dl_symbol_not_found, "Failed to resolve symbol from dynamic library.", 0x0302, std::errc::function_not_supported) \
-    X(dl_api_load_failed, "Failed to load dynamic library API.", 0x0303, std::errc::function_not_supported)          \
+    X(dl_open_failed, "Failed to open dynamic library.", 0x0301, std::errc::no_such_file_or_directory)                \
+    X(dl_symbol_not_found, "Failed to resolve symbol from dynamic library.", 0x0302,                                  \
+      std::errc::function_not_supported)                                                                              \
+    X(dl_api_load_failed, "Failed to load dynamic library API.", 0x0303, std::errc::function_not_supported)           \
                                                                                                                       \
     /* === Simd-JSON error (0x0201-0x02FF) === */                                                                     \
     X(json_capacity, "This parser can't support a document that big.", 0x0201, std::errc::value_too_large)            \
@@ -66,4 +68,4 @@ enum class utils_ec : uint16_t {
 
     SKL_UTILS_ERROR_CODES(SKL_ERR_X_ENUM)
 };
-}   // namespace skl
+NAMESPACE_UTILS_END

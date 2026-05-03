@@ -3,9 +3,9 @@ set_version("0.1.5")
 includes("@builtin/check")
 
 option("module_dynamic_load")
-	set_default(false)
-	set_showmenu(true)
-	set_description("Enable module dynamic loading (use SKL_MODULE_LANG and link skl-dl in executables)")
+set_default(false)
+set_showmenu(true)
+set_description("Enable module dynamic loading (use SKL_MODULE_LANG and link skl-dl in executables)")
 option_end()
 
 add_includedirs(os.scriptdir() .. "/include", os.scriptdir() .. "/extern")
@@ -13,9 +13,14 @@ add_includedirs(os.scriptdir() .. "/include", os.scriptdir() .. "/extern")
 set_languages("c99", "cxx20")
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate")
+-- add_rpathdirs("@")
+
 if is_mode("debug") then
 	add_defines("__DEBUG__", "_DEBUG", "DEBUG")
+	set_policy("build.sanitizer.address", true)
+	set_policy("build.sanitizer.undefined", true)
 end
+
 local libs = {
 	{
 		path = {
@@ -25,23 +30,25 @@ local libs = {
 		type = "share",
 		package = {},
 		deps = {},
+		defines = {},
 		lazy_undefined = false,
 	},
 	{
 		path = {
 			os.scriptdir() .. "/extern/glad/glad.c",
-			os.scriptdir() .. "/src/graphics/gl/shader.cpp",
-			os.scriptdir() .. "/src/graphics/gl/camera.cpp",
-			os.scriptdir() .. "/src/graphics/gl/texture.cpp",
+			os.scriptdir() .. "/src/graphics/gl/*.cpp",
+			os.scriptdir() .. "/src/graphics/resource_manager.cpp",
 			os.scriptdir() .. "/src/graphics/error_category.cpp",
 		},
 		name = "skl-gl",
 		type = "share",
 		package = {
+            "assimp",
 			"glfw3",
 			"glm",
 		},
 		deps = { "skl-utils" },
+		defines = {},
 		lazy_undefined = true,
 	},
 	{
@@ -50,8 +57,11 @@ local libs = {
 		},
 		name = "skl-utils",
 		type = "share",
-		package = {},
+		package = {
+			"xxhash",
+		},
 		deps = {},
+		defines = {},
 		lazy_undefined = true,
 	},
 	{
@@ -62,6 +72,7 @@ local libs = {
 		type = "share",
 		package = {},
 		deps = {},
+		defines = {},
 		lazy_undefined = true,
 	},
 	{
@@ -74,17 +85,29 @@ local libs = {
 			"simdjson",
 		},
 		deps = {
-            "skl-fs"
-        },
+			"skl-fs",
+		},
+		defines = {},
 		lazy_undefined = true,
 	},
 }
 
-add_requires("pkgconfig::glfw3", { alias = "glfw3" })
-add_requires("pkgconfig::glm", { alias = "glm" })
-add_requires("pkgconfig::simdjson", { alias = "simdjson" })
+add_requires("pkgconf::glfw3", { alias = "glfw3" })
+add_requires("pkgconf::glm", { alias = "glm" })
+add_requires("pkgconf::simdjson", { alias = "simdjson" })
+add_requires("pkgconf::libxxhash", { alias = "xxhash" })
+add_requires("pkgconf::assimp", {alias = "assimp"})
+add_requires("pkgconf::fmt", { alias = "fmt" })
+add_requires("function2", { alias = "functionEX"})
+add_requires("tl_expected", { alias = "expected" })
 add_requires("opengl", { optional = true })
 
+-- add header dir for packages
+add_packages("xxhash", { link = {} })
+add_packages("tl_expected")
+add_packages("functionEX")
+add_packages("fmt")
+add_packages("assimp", { link = {} })
 for i = 1, #libs do
 	target(libs[i].name)
 	set_kind("shared")
@@ -94,12 +117,12 @@ for i = 1, #libs do
 	if libs[i].lazy_undefined then
 		-- Allow unresolved symbols in shared libs and resolve at final load/link stage.
 		if is_plat("macosx") then
-			add_shflags("-undefined", "dynamic_lookup", {force = true})
+			add_shflags("-undefined", "dynamic_lookup", { force = true })
 		elseif is_plat("linux") then
-			add_shflags("-Wl,--allow-shlib-undefined", {force = true})
+			add_shflags("-Wl,--allow-shlib-undefined", { force = true })
 		elseif is_plat("windows") then
-			add_shflags("/FORCE:UNRESOLVED", {tools = {"link", "clang_cl"}, force = true})
-			add_shflags("-Wl,--allow-shlib-undefined", {tools = {"gcc", "g++", "clang", "clang++"}, force = true})
+			add_shflags("/FORCE:UNRESOLVED", { tools = { "link", "clang_cl" }, force = true })
+			add_shflags("-Wl,--allow-shlib-undefined", { tools = { "gcc", "g++", "clang", "clang++" }, force = true })
 		end
 	end
 	for j = 1, #libs[i].package do
@@ -107,7 +130,10 @@ for i = 1, #libs do
 	end
 	for j = 1, #libs[i].deps do
 		add_deps(libs[i].deps[j])
-        add_links(libs[i].deps[j])
+		add_links(libs[i].deps[j])
+	end
+	for j = 1, #libs[i].defines do
+		add_defines(libs[i].defines[j])
 	end
 	target_end()
 end
@@ -190,23 +216,23 @@ local function auto_deps(srcpath, tab, callback)
 end
 
 target("lang_linked")
-    set_kind("binary")
-    add_files(os.scriptdir() .. "/demo/lang.cpp")
-    add_cxflags("-Wno-parentheses-equality")
-    add_deps("skl-gl")
-    add_links("skl-gl")
-	add_deps("skl-lang")
-	add_links("skl-lang")
+set_kind("binary")
+add_files(os.scriptdir() .. "/demo/lang.cpp")
+-- add_cxflags("-Wno-parentheses-equality")
+add_deps("skl-gl")
+add_links("skl-gl")
+add_deps("skl-lang")
+add_links("skl-lang")
 
 target("lang_dynamic")
-	set_kind("binary")
-	add_files(os.scriptdir() .. "/demo/lang.cpp")
-	add_cxflags("-Wno-parentheses-equality")
-	add_defines("SKL_LANG_DEMO_DYNAMIC", "SKL_MODULE_LANG")
-	add_deps("skl-utils")
-	add_links("skl-utils")
-	add_deps("skl-dl")
-	add_links("skl-dl")
+set_kind("binary")
+add_files(os.scriptdir() .. "/demo/lang.cpp")
+add_cxflags("-Wno-parentheses-equality")
+add_defines("SKL_LANG_DEMO_DYNAMIC", "SKL_MODULE_LANG")
+add_deps("skl-utils")
+add_links("skl-utils")
+add_deps("skl-dl")
+add_links("skl-dl")
 
 for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/**/*.cpp")) do
 	local basename = path.basename(filepath)
@@ -248,3 +274,23 @@ for _, filepath in ipairs(os.files(os.scriptdir() .. "/demo/**/*.c")) do
 	set_kind("binary")
 	add_files(filepath, os.scriptdir() .. "/extern/glad/glad.c")
 end
+
+-- download models
+-- url: https://learnopengl-cn.github.io/data/backpack.zip
+
+target("backpack_model")
+set_kind("phony")
+after_build(function(target)
+    print("Ensuring backpack model exists...")
+    if not os.exists(os.scriptdir() .. "/resources/models/backpack") then
+        if not os.exists(os.scriptdir() .. "/backpack.zip") then
+            print("Downloading backpack model...")
+            os.run("curl -L -o " .. os.scriptdir() .. "/backpack.zip https://learnopengl-cn.github.io/data/backpack.zip")
+        end
+        os.run("unzip -o " .. os.scriptdir() .. "/backpack.zip -d " .. os.scriptdir() .. "/resources/models/backpack")
+        print("Backpack model downloaded and extracted successfully.")
+    else
+        print("Backpack model already exists, skipping download.")
+    end
+end
+)
