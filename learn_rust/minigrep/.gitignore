@@ -1,0 +1,2 @@
+# 顶层 .gitignore 忽略了所有 *.txt；这里为示例数据开一个例外
+!poem.txt
