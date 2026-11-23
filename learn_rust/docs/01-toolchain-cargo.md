@@ -208,7 +208,8 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 - 可执行程序 / 应用：提交 `Cargo.lock`，保证可复现；
 - 库：通常不提交 lockfile，让下游自行解析。
 
-> 本仓库的 `guessing_game` 已有 `Cargo.lock`，教程保持原样。
+> 本仓库的示例都通过 `**/Cargo.lock` 忽略了锁文件：每个 crate 只是独立的教学示例，
+> 不追求可复现构建，也避免 21 份 lockfile 随依赖升级产生噪音。真正发布应用时应提交它。
 
 ### 4.2 features
 
